@@ -1,34 +1,62 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-let workerStarted = false;
+interface MSWProviderProps {
+  children: React.ReactNode;
+}
 
-export default function MSWProvider() {
+let workerStartPromise: Promise<void> | null = null;
+
+export default function MSWProvider({
+  children,
+}: MSWProviderProps) {
+  const [ready, setReady] = useState(
+    process.env.NODE_ENV !== "development",
+  );
+
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") {
       return;
     }
 
-    if (workerStarted) {
-      return;
+    if (!workerStartPromise) {
+      workerStartPromise = import("@/mocks/browser")
+        .then(async ({ worker }) => {
+          await worker.start({
+            onUnhandledRequest: "bypass",
+          });
+        })
+        .catch((error) => {
+          workerStartPromise = null;
+
+          console.error(
+            "Failed to start MSW:",
+            error,
+          );
+
+          throw error;
+        });
     }
 
-    workerStarted = true;
-
-    const startWorker = async () => {
-      const { worker } = await import("@/mocks/browser");
-
-      await worker.start({
-        onUnhandledRequest: "bypass",
+    workerStartPromise
+      .then(() => {
+        setReady(true);
+      })
+      .catch(() => {
+        setReady(false);
       });
-    };
-
-    startWorker().catch((error) => {
-      workerStarted = false;
-      console.error("Failed to start MSW:", error);
-    });
   }, []);
 
-  return null;
+  if (!ready) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-600">
+          Starting mock API...
+        </p>
+      </main>
+    );
+  }
+
+  return <>{children}</>;
 }

@@ -1,10 +1,35 @@
 import { http, HttpResponse, delay } from "msw";
 import { generateEmployees } from "@/mocks/data/seed";
+import {
+  validateMockAccessToken,
+} from "./auth.utils";
 
 const employees = generateEmployees(5000);
 
 export const employeeHandlers = [
-  http.get("/employees", async ({ request }) => {
+  http.get("/api/employees", async ({ request }) => {
+    const authorization =
+      request.headers.get("authorization");
+
+    const userId = validateMockAccessToken(
+      authorization,
+    );
+
+   
+
+    if (!userId) {
+      return HttpResponse.json(
+        {
+          status: 401,
+          message: "Access token is missing or expired",
+          code: "ACCESS_TOKEN_EXPIRED",
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
     await delay(200 + Math.floor(Math.random() * 601));
 
     const url = new URL(request.url);
