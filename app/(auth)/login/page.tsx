@@ -36,9 +36,7 @@ export default function LoginPage() {
     try {
       await login(values).unwrap();
 
-      document.cookie =
-        "workforce-auth=authenticated; path=/; max-age=86400; SameSite=Lax";
-
+      
       const redirectTo =
         searchParams.get("redirect") || "/dashboard";
 

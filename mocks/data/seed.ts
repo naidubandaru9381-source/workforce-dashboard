@@ -68,6 +68,49 @@ const LEAVE_STATUSES: LeaveStatus[] = [
   "rejected",
 ];
 
+const EMPLOYEE_OVERRIDES_KEY = "workforce-employee-overrides";
+
+type EmployeeOverride = Record<string, Partial<Employee>>;
+
+function getEmployeeOverrides(): EmployeeOverride {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const stored = localStorage.getItem(EMPLOYEE_OVERRIDES_KEY);
+
+    if (!stored) {
+      return {};
+    }
+
+    return JSON.parse(stored) as EmployeeOverride;
+  } catch {
+    return {};
+  }
+}
+
+export function saveEmployeeOverride(
+  employeeId: string,
+  data: Partial<Employee>,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const overrides = getEmployeeOverrides();
+
+  overrides[employeeId] = {
+    ...overrides[employeeId],
+    ...data,
+  };
+
+  localStorage.setItem(
+    EMPLOYEE_OVERRIDES_KEY,
+    JSON.stringify(overrides),
+  );
+}
+
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
@@ -86,30 +129,34 @@ function dateFromSeed(seed: number, daysBack: number): string {
   return date.toISOString().split("T")[0];
 }
 
-export function generateEmployees(count = 5000): Employee[] {
+export function generateEmployees(count: number): Employee[] {
+  const overrides = getEmployeeOverrides();
+
   return Array.from({ length: count }, (_, index) => {
     const id = index + 1;
 
     const firstName = randomItem(FIRST_NAMES, id);
     const lastName = randomItem(LAST_NAMES, id + 100);
 
-    const status: EmployeeStatus =
-      seededRandom(id + 200) > 0.08 ? "active" : "inactive";
-
-    return {
+    const employee: Employee = {
       id: `emp-${id}`,
-      employeeId: `EMP${String(id).padStart(5, "0")}`,
+      employeeId: `EMP${String(id).padStart(4, "0")}`,
       firstName,
       lastName,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${id}@workforce.test`,
-      phone: `+91 9${String(100000000 + id).slice(-9)}`,
-      department: randomItem(DEPARTMENTS, id + 300),
-      designation: randomItem(DESIGNATIONS, id + 400),
-      status,
-      joinDate: dateFromSeed(id + 500, 3650),
-      salary: 30000 + Math.floor(seededRandom(id + 600) * 120000),
-      managerId: id > 20 ? `emp-${Math.floor(seededRandom(id + 700) * 20) + 1}` : null,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${id}@example.com`,
+      phone: `9${String(100000000 + id).slice(0, 9)}`,
+      department: randomItem(DEPARTMENTS, id + 200),
+      designation: randomItem(DESIGNATIONS, id + 300),
+      status: (id % 10 === 0 ? "inactive" : "active") as EmployeeStatus,
+      joinDate: dateFromSeed(id + 400, 2000),
+      salary: 30000 + Math.floor(seededRandom(id + 500) * 70000),
+      managerId: id > 10 ? `emp-${Math.floor(id / 10)}` : null,
       avatar: `https://i.pravatar.cc/150?img=${(id % 70) + 1}`,
+    };
+
+    return {
+      ...employee,
+      ...overrides[employee.id],
     };
   });
 }

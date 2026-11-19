@@ -1,7 +1,4 @@
-interface MockAccessTokenPayload {
-  userId: string;
-  expiresAt: number;
-}
+
 
 export function createMockAccessToken(
   userId: string,
