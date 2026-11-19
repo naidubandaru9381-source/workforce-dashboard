@@ -15,8 +15,9 @@ tagTypes: [
   "TaskActivity",
   "LeaveRequest",
   "Holiday",
-  "LeaveRequest",
 "LeaveBalance",
+  "Dashboard",
+
 ],
   endpoints: () => ({}),
 });
