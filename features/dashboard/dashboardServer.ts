@@ -67,11 +67,27 @@ export async function getDashboardSummaryServer(
     );
   }).length;
 
+  // Upcoming leave means leave starting
+  // today through the next 30 days.
+  const today = new Date()
+    .toISOString()
+    .split("T")[0];
+
+  const upcomingTo = new Date();
+
+  upcomingTo.setDate(
+    upcomingTo.getDate() + 30,
+  );
+
+  const upcomingToDate = upcomingTo
+    .toISOString()
+    .split("T")[0];
+
   const upcomingLeave = leaveRequests
     .filter((leave) => {
       return (
-        leave.startDate >= from &&
-        leave.startDate <= to &&
+        leave.startDate >= today &&
+        leave.startDate <= upcomingToDate &&
         leave.status !== "rejected"
       );
     })

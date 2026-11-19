@@ -1,72 +1,302 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { useGetDashboardSummaryQuery } from "@/features/dashboard/dashboardApi";
+import { useDispatch } from "react-redux";
+
+import {
+  dashboardApi,
+  useGetDashboardSummaryQuery,
+} from "@/features/dashboard/dashboardApi";
+
+import DashboardErrorBoundary from "./DashboardErrorBoundary";
+import DashboardMetrics from "./DashboardMetrics";
+import {
+  ChartSkeleton,
+  LeaveSkeleton,
+  MetricSkeleton,
+} from "./DashboardSkeleton";
+import HeadcountWidget from "./HeadcountWidget";
+import UpcomingLeaveWidget from "./UpcomingLeaveWidget";
+
+import { baseApi } from "@/store/api/baseApi";
+import type { AppDispatch } from "@/store";
+
+import type { DashboardSummary } from "@/types/dashboard";
+
+interface DashboardDateRange {
+  from: string;
+  to: string;
+}
+
+interface DashboardClientProps {
+  initialSummary: DashboardSummary;
+  initialDateRange: DashboardDateRange;
+}
+
+type DashboardRange = "30" | "60" | "90";
 
 function formatDate(date: Date) {
   return date.toISOString().split("T")[0];
 }
 
-export default function DashboardClient() {
-  const [range, setRange] = useState<"30" | "60" | "90">("30");
+function getDateRange(
+  days: DashboardRange,
+  initialDateRange: DashboardDateRange,
+): DashboardDateRange {
+  if (days === "30") {
+    return initialDateRange;
+  }
 
-  const dateRange = useMemo(() => {
-    const to = new Date();
-    const from = new Date();
+  const to = new Date();
+  const from = new Date();
 
-    from.setDate(from.getDate() - Number(range));
+  from.setDate(
+    from.getDate() - Number(days),
+  );
 
-    return {
-      from: formatDate(from),
-      to: formatDate(to),
-    };
-  }, [range]);
+  return {
+    from: formatDate(from),
+    to: formatDate(to),
+  };
+}
+
+export default function DashboardClient({
+  initialSummary,
+  initialDateRange,
+}: DashboardClientProps) {
+  const dispatch = useDispatch<AppDispatch>();
+
+  const [range, setRange] =
+    useState<DashboardRange>("30");
+
+  const dateRange = useMemo(
+    () =>
+      getDateRange(
+        range,
+        initialDateRange,
+      ),
+    [range, initialDateRange],
+  );
+
+  /*
+   * Hydrate the RTK Query cache with the
+   * server-rendered 30-day dashboard data.
+   *
+   * This prevents a duplicate request on
+   * the initial dashboard load.
+   */
+  useEffect(() => {
+    dispatch(
+      baseApi.util.upsertQueryData(
+        "getDashboardSummary",
+        initialDateRange,
+        initialSummary,
+      ),
+    );
+  }, [
+    dispatch,
+    initialDateRange,
+    initialSummary,
+  ]);
+
+  /*
+   * RTK Query prefetch.
+   *
+   * When the user interacts with the date-range
+   * control, we prepare the 60 and 90 day data.
+   */
+  const prefetchDashboard =
+    dashboardApi.usePrefetch(
+      "getDashboardSummary",
+    );
+
+  const handlePrefetch = (
+    days: DashboardRange,
+  ) => {
+    if (days === "30") {
+      return;
+    }
+
+    const nextDateRange = getDateRange(
+      days,
+      initialDateRange,
+    );
+
+    prefetchDashboard(
+      nextDateRange,
+      {
+        ifOlderThan: 30,
+      },
+    );
+  };
 
   const {
     data,
-    isLoading,
     isFetching,
     isError,
     error,
-  } = useGetDashboardSummaryQuery(dateRange);
+  } = useGetDashboardSummaryQuery(
+    dateRange,
+    {
+      /*
+       * The initial 30-day data already comes
+       * from the server.
+       *
+       * Therefore don't make another request
+       * for the initial range.
+       */
+      skip: range === "30",
+    },
+  );
 
-  if (isLoading) {
+  /*
+   * For 30 days:
+   *   data is not required because initialSummary
+   *   came from the server.
+   *
+   * For 60/90 days:
+   *   data comes from RTK Query.
+   */
+  const dashboardData =
+    range === "30"
+      ? initialSummary
+      : data;
+
+  /*
+   * Show skeletons while 60/90 day data is
+   * being fetched for the first time.
+   */
+  if (
+    range !== "30" &&
+    isFetching &&
+    !data
+  ) {
     return (
       <main className="p-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-3xl font-bold">
+              Dashboard
+            </h1>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-32 animate-pulse rounded-xl bg-gray-200"
-            />
-          ))}
+            <p className="mt-1 text-gray-600">
+              Workforce and project overview
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="dashboard-range"
+              className="text-sm font-medium"
+            >
+              Date range
+            </label>
+
+            <select
+              id="dashboard-range"
+              value={range}
+              onChange={(event) =>
+                setRange(
+                  event.target.value as DashboardRange,
+                )
+              }
+              onMouseEnter={() => {
+                handlePrefetch("60");
+                handlePrefetch("90");
+              }}
+              onFocus={() => {
+                handlePrefetch("60");
+                handlePrefetch("90");
+              }}
+              className="rounded-lg border px-3 py-2 text-sm"
+            >
+              <option value="30">
+                Last 30 days
+              </option>
+
+              <option value="60">
+                Last 60 days
+              </option>
+
+              <option value="90">
+                Last 90 days
+              </option>
+            </select>
+          </div>
         </div>
 
-        <div className="mt-6 h-80 animate-pulse rounded-xl bg-gray-200" />
+        <section
+          aria-label="Dashboard loading"
+          className="mt-6"
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <MetricSkeleton />
+            <MetricSkeleton />
+            <MetricSkeleton />
+          </div>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <ChartSkeleton />
+            <LeaveSkeleton />
+          </div>
+        </section>
       </main>
     );
   }
 
-  if (isError || !data) {
+  /*
+   * If the API failed and there is no data to display,
+   * show an error state.
+   */
+  if (
+    range !== "30" &&
+    isError &&
+    !dashboardData
+  ) {
     return (
       <main className="p-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold">
+          Dashboard
+        </h1>
 
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
-          Failed to load dashboard data.
-          <div className="mt-1 text-sm">
+        <div
+          className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"
+          role="alert"
+        >
+          <p className="font-medium">
+            Failed to load dashboard data.
+          </p>
+
+          <p className="mt-1 text-sm">
+            Please try changing the date range
+            or refreshing the page.
+          </p>
+
+          <p className="mt-2 text-xs">
             {JSON.stringify(error)}
-          </div>
+          </p>
         </div>
       </main>
     );
+  }
+
+  /*
+   * TypeScript knows that dashboardData exists
+   * here because the 30-day range uses
+   * initialSummary and 60/90 are handled above.
+   */
+  if (!dashboardData) {
+    return null;
   }
 
   return (
     <main className="p-6">
+      {/* Header */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-bold">
@@ -91,153 +321,68 @@ export default function DashboardClient() {
             value={range}
             onChange={(event) =>
               setRange(
-                event.target.value as "30" | "60" | "90",
+                event.target.value as DashboardRange,
               )
             }
+            onMouseEnter={() => {
+              handlePrefetch("60");
+              handlePrefetch("90");
+            }}
+            onFocus={() => {
+              handlePrefetch("60");
+              handlePrefetch("90");
+            }}
             className="rounded-lg border px-3 py-2 text-sm"
           >
-            <option value="30">Last 30 days</option>
-            <option value="60">Last 60 days</option>
-            <option value="90">Last 90 days</option>
+            <option value="30">
+              Last 30 days
+            </option>
+
+            <option value="60">
+              Last 60 days
+            </option>
+
+            <option value="90">
+              Last 90 days
+            </option>
           </select>
 
           {isFetching && (
-            <span className="text-xs text-gray-500">
+            <span
+              className="text-xs text-gray-500"
+              aria-live="polite"
+            >
               Updating...
             </span>
           )}
         </div>
       </div>
 
-      <section
-        aria-label="Dashboard metrics"
-        className="mt-6 grid gap-4 md:grid-cols-3"
-      >
-        <MetricCard
-          title="Task completion"
-          value={`${data.taskCompletionRate.percentage}%`}
-          description={`${data.taskCompletionRate.completed} of ${data.taskCompletionRate.total} tasks completed`}
+      {/* Dashboard metrics */}
+      <DashboardErrorBoundary title="Dashboard metrics">
+        <DashboardMetrics
+          data={dashboardData}
         />
+      </DashboardErrorBoundary>
 
-        <MetricCard
-          title="Overdue tasks"
-          value={String(data.overdueTasks.count)}
-          description="Incomplete tasks past their due date"
-        />
-
-        <MetricCard
-          title="Upcoming leave"
-          value={String(data.upcomingLeave.length)}
-          description="Upcoming leave requests"
-        />
-      </section>
-
+      {/* Dashboard widgets */}
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">
-            Headcount by department
-          </h2>
+        <DashboardErrorBoundary title="Headcount">
+          <HeadcountWidget
+            data={
+              dashboardData.headcountByDepartment
+            }
+          />
+        </DashboardErrorBoundary>
 
-          <div className="mt-4 space-y-4">
-            {data.headcountByDepartment.map((item) => {
-              const maxCount = Math.max(
-                ...data.headcountByDepartment.map(
-                  (department) => department.count,
-                ),
-              );
-
-              const width =
-                maxCount === 0
-                  ? 0
-                  : (item.count / maxCount) * 100;
-
-              return (
-                <div key={item.department}>
-                  <div className="flex justify-between text-sm">
-                    <span>{item.department}</span>
-                    <span className="font-medium">
-                      {item.count}
-                    </span>
-                  </div>
-
-                  <div className="mt-1 h-2 rounded-full bg-gray-100">
-                    <div
-                      className="h-2 rounded-full bg-blue-600"
-                      style={{ width: `${width}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">
-            Upcoming leave
-          </h2>
-
-          {data.upcomingLeave.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-500">
-              No upcoming leave.
-            </p>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {data.upcomingLeave.map((leave) => (
-                <div
-                  key={leave.id}
-                  className="rounded-lg border p-3"
-                >
-                  <div className="flex justify-between gap-4">
-                    <div>
-                      <p className="font-medium">
-                        {leave.employeeName}
-                      </p>
-
-                      <p className="text-sm text-gray-500">
-                        {leave.startDate} → {leave.endDate}
-                      </p>
-                    </div>
-
-                    <span className="text-sm font-medium">
-                      {leave.days} day
-                      {leave.days !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <DashboardErrorBoundary title="Upcoming leave">
+          <UpcomingLeaveWidget
+            data={
+              dashboardData.upcomingLeave
+            }
+          />
+        </DashboardErrorBoundary>
       </section>
     </main>
-  );
-}
-
-interface MetricCardProps {
-  title: string;
-  value: string;
-  description: string;
-}
-
-function MetricCard({
-  title,
-  value,
-  description,
-}: MetricCardProps) {
-  return (
-    <article className="rounded-xl border bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-gray-500">
-        {title}
-      </p>
-
-      <p className="mt-2 text-3xl font-bold">
-        {value}
-      </p>
-
-      <p className="mt-1 text-sm text-gray-500">
-        {description}
-      </p>
-    </article>
   );
 }
