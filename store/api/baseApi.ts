@@ -7,13 +7,16 @@ export const baseApi = createApi({
 
   baseQuery: baseQueryWithReauth,
 
-  tagTypes: [
+tagTypes: [
   "Employee",
   "Project",
   "Task",
   "TaskComment",
   "TaskActivity",
+  "LeaveRequest",
+  "Holiday",
+  "LeaveRequest",
+"LeaveBalance",
 ],
-
   endpoints: () => ({}),
 });
