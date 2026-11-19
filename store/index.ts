@@ -12,8 +12,8 @@ import {
   baseApi,
 } from "@/store/api/baseApi";
 
-export const store =
-  configureStore({
+export const makeStore = () => {
+  const store = configureStore({
     reducer: {
       auth: authReducer,
 
@@ -29,10 +29,18 @@ export const store =
       ),
   });
 
-setupListeners(store.dispatch);
+  setupListeners(store.dispatch);
+
+  return store;
+};
+
+export const store = makeStore();
+
+export type AppStore =
+  ReturnType<typeof makeStore>;
 
 export type RootState =
-  ReturnType<typeof store.getState>;
+  ReturnType<AppStore["getState"]>;
 
 export type AppDispatch =
-  typeof store.dispatch;
+  AppStore["dispatch"];

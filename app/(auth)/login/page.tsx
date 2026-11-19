@@ -10,11 +10,14 @@ import {
   type LoginFormValues,
 } from "@/lib/validation/auth";
 import { useLoginMutation } from "@/features/auth/authApi";
-
+import { setCredentials } from "@/features/auth/authSlice";
+import { saveAuthSession } from "@/lib/auth/authStorage";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/store";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
+const dispatch = useDispatch<AppDispatch>();
   const [login, { isLoading }] = useLoginMutation();
   const [serverError, setServerError] = useState("");
 
@@ -34,13 +37,15 @@ export default function LoginPage() {
     setServerError("");
 
     try {
-      await login(values).unwrap();
+     const data = await login(values).unwrap();
 
-      
-      const redirectTo =
-        searchParams.get("redirect") || "/dashboard";
+dispatch(setCredentials(data));
+saveAuthSession(data);
 
-      router.push(redirectTo);
+const redirectTo =
+  searchParams.get("redirect") || "/dashboard";
+
+router.replace(redirectTo);
     } catch (error) {
       const message =
         typeof error === "object" &&
