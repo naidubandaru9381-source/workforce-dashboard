@@ -16,3 +16,21 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
 }
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TaskActivity {
+  id: string;
+  taskId: string;
+  userId: string;
+  userName: string;
+  action: string;
+  description: string;
+  createdAt: string;
+}
