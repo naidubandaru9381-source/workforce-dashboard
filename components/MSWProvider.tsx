@@ -24,17 +24,7 @@ export default function MSWProvider({
       workerStartPromise = import("@/mocks/browser")
         .then(async ({ worker }) => {
           await worker.start({
-            onUnhandledRequest(request) {
-              if (
-                request.url.pathname.startsWith(
-                  "/api/",
-                )
-              ) {
-                console.warn(
-                  `[MSW] Unhandled API request: ${request.method} ${request.url.pathname}`,
-                );
-              }
-            },
+            onUnhandledRequest: "bypass",
           });
         })
         .catch((error) => {
