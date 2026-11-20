@@ -1,8 +1,7 @@
+
 "use client";
 
-import {
-  useDraggable,
-} from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
 import type { Task } from "@/types/task";
@@ -27,9 +26,7 @@ export default function TaskCard({
   });
 
   const style = {
-    transform: CSS.Translate.toString(
-      transform,
-    ),
+    transform: CSS.Translate.toString(transform),
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -39,20 +36,28 @@ export default function TaskCard({
       style={style}
       {...attributes}
       {...listeners}
-      onClick={() => onOpen(task)}
-      onKeyDown={(event) => {
-        if (
-          event.key === "Enter" ||
-          event.key === " "
-        ) {
-          event.preventDefault();
-          onOpen(task);
-        }
-      }}
+      data-testid={`task-card-${task.id}`}
       role="button"
       tabIndex={0}
       aria-label={`Open task ${task.title}`}
-      className="cursor-pointer touch-none rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md active:cursor-grabbing"
+      className={[
+        "cursor-grab",
+        "touch-none",
+        "rounded-lg",
+        "border",
+        "bg-white",
+        "p-4",
+        "shadow-sm",
+        "transition",
+        "hover:shadow-md",
+        "active:cursor-grabbing",
+        isDragging ? "z-50 shadow-lg" : "",
+      ].join(" ")}
+      onClick={() => {
+        if (!isDragging) {
+          onOpen(task);
+        }
+      }}
     >
       <h3 className="font-medium">
         {task.title}
