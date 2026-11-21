@@ -5,6 +5,7 @@ import EditEmployeePanel from "@/components/employees/EditEmployeePanel";
 describe("EditEmployeePanel server error mapping", () => {
     const employee = {
         id: "employee-001",
+        employeeId: "EMP001",
         firstName: "John",
         lastName: "Doe",
         email: "john@example.com",
@@ -14,6 +15,8 @@ describe("EditEmployeePanel server error mapping", () => {
         status: "active" as const,
         joinDate: "2026-01-15",
         salary: 50000,
+        managerId: null,
+        avatar: "",
     };
 
     it("maps server validation errors to the corresponding form field", async () => {

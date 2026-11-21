@@ -56,7 +56,7 @@ describe("projectApi optimistic updates", () => {
         );
 
         const stateAfterOptimisticUpdate =
-            baseApi.endpoints.getProjectTasks.select(projectId)(
+            projectApi.endpoints.getProjectTasks.select(projectId)(
                 store.getState(),
             );
 
@@ -66,7 +66,7 @@ describe("projectApi optimistic updates", () => {
 
         await updatePromise;
 
-        const stateAfterRollback = baseApi.endpoints.getProjectTasks.select(
+        const stateAfterRollback = projectApi.endpoints.getProjectTasks.select(
             projectId,
         )(store.getState());
 
