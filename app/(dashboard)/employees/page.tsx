@@ -34,8 +34,8 @@ export default function EmployeesPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-  
-const { showToast } = useToast();
+
+    const { showToast } = useToast();
     const viewMode =
         searchParams.get("view") === "infinite"
             ? "infinite"
@@ -79,7 +79,7 @@ const { showToast } = useToast();
     const [updateEmployee, { isLoading: isUpdatingEmployee }] =
         useUpdateEmployeeMutation();
 
-   
+
 
     const page = Number(
         searchParams.get("page") ?? "1",
@@ -151,7 +151,7 @@ const { showToast } = useToast();
         400,
     );
 
-  
+
     const {
         data,
         isLoading,
@@ -189,7 +189,7 @@ const { showToast } = useToast();
         params.set("view", mode);
         params.set("page", "1");
 
-       
+
         setSelectedIds([]);
         setBulkError(null);
         setBulkProgress(null);
@@ -205,8 +205,8 @@ const { showToast } = useToast();
         setSelectedIds((current) =>
             current.includes(employeeId)
                 ? current.filter(
-                      (id) => id !== employeeId,
-                  )
+                    (id) => id !== employeeId,
+                )
                 : [...current, employeeId],
         );
     };
@@ -264,21 +264,13 @@ const { showToast } = useToast();
 
             const failed =
                 response.results.filter(
-                    (result) =>
-                        !result.success,
+                    (result) => !result.success,
                 );
-
-            if (failed.length > 0) {
-                setBulkError(
-                    `${failed.length} employee(s) could not be updated.`,
-                );
-            }
 
             const successfulIds =
                 response.results
                     .filter(
-                        (result) =>
-                            result.success,
+                        (result) => result.success,
                     )
                     .map(
                         (result) =>
@@ -288,11 +280,25 @@ const { showToast } = useToast();
             setSelectedIds((current) =>
                 current.filter(
                     (id) =>
-                        !successfulIds.includes(
-                            id,
-                        ),
+                        !successfulIds.includes(id),
                 ),
             );
+
+            if (failed.length > 0) {
+                setBulkError(
+                    `${failed.length} employee(s) could not be updated.`,
+                );
+
+                showToast(
+                    `${successfulIds.length} employee(s) deactivated, but ${failed.length} failed.`,
+                    "warning",
+                );
+            } else {
+                showToast(
+                    `${successfulIds.length} employee(s) deactivated successfully.`,
+                    "success",
+                );
+            }
 
             setBulkProgress({
                 completed:
@@ -309,9 +315,13 @@ const { showToast } = useToast();
             );
 
             setBulkProgress(null);
+
+            showToast(
+                "Bulk employee update failed. Please try again.",
+                "error",
+            );
         }
     };
-
 
     const handleEditEmployee = (
         employee: Employee,
@@ -325,67 +335,67 @@ const { showToast } = useToast();
         setServerErrors({});
     };
 
-   const handleSaveEmployee = async (
-    values: EmployeeFormValues,
-) => {
-    if (!editingEmployee) {
-        return;
-    }
-
-    setServerErrors({});
-
-    try {
-        await updateEmployee({
-            id: editingEmployee.id,
-            data: values,
-        }).unwrap();
-
-        setEditingEmployee(null);
-        setServerErrors({});
-
-        showToast(
-            "Employee updated successfully.",
-            "success",
-        );
-    } catch (error) {
-        const apiError = error as {
-            status?: number;
-            data?: {
-                message?: string;
-                errors?: Record<string, string>;
-            };
-        };
-
-        if (
-            apiError.status === 422 &&
-            apiError.data?.errors
-        ) {
-            setServerErrors(
-                apiError.data.errors,
-            );
-
-            showToast(
-                "Please correct the highlighted fields.",
-                "error",
-            );
-
+    const handleSaveEmployee = async (
+        values: EmployeeFormValues,
+    ) => {
+        if (!editingEmployee) {
             return;
         }
 
-        setServerErrors({
-            form:
+        setServerErrors({});
+
+        try {
+            await updateEmployee({
+                id: editingEmployee.id,
+                data: values,
+            }).unwrap();
+
+            setEditingEmployee(null);
+            setServerErrors({});
+
+            showToast(
+                "Employee updated successfully.",
+                "success",
+            );
+        } catch (error) {
+            const apiError = error as {
+                status?: number;
+                data?: {
+                    message?: string;
+                    errors?: Record<string, string>;
+                };
+            };
+
+            if (
+                apiError.status === 422 &&
+                apiError.data?.errors
+            ) {
+                setServerErrors(
+                    apiError.data.errors,
+                );
+
+                showToast(
+                    "Please correct the highlighted fields.",
+                    "error",
+                );
+
+                return;
+            }
+
+            setServerErrors({
+                form:
+                    apiError.data?.message ??
+                    "Unable to update employee. Please try again.",
+            });
+
+            showToast(
                 apiError.data?.message ??
                 "Unable to update employee. Please try again.",
-        });
+                "error",
+            );
+        }
+    };
 
-        showToast(
-            apiError.data?.message ??
-                "Unable to update employee. Please try again.",
-            "error",
-        );
-    }
-};
-    
     const updateSearch = (
         value: string,
     ) => {
@@ -436,7 +446,7 @@ const { showToast } = useToast();
         );
     };
 
-    
+
     const updateStatus = (
         value: string,
     ) => {
@@ -460,7 +470,7 @@ const { showToast } = useToast();
         );
     };
 
-   
+
 
     const updateJoinDateFrom = (
         value: string,
@@ -547,7 +557,7 @@ const { showToast } = useToast();
         } else {
             const existing =
                 updatedSort[
-                    existingIndex
+                existingIndex
                 ];
 
             if (
@@ -632,7 +642,7 @@ const { showToast } = useToast();
         );
     };
 
-  
+
 
     return (
         <RoleGuard
@@ -846,12 +856,11 @@ const { showToast } = useToast();
                                 viewMode ===
                                 "table"
                             }
-                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-                                viewMode ===
-                                "table"
+                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${viewMode ===
+                                    "table"
                                     ? "bg-blue-600 text-white"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                            }`}
+                                }`}
                         >
                             Table
                         </button>
@@ -867,12 +876,11 @@ const { showToast } = useToast();
                                 viewMode ===
                                 "infinite"
                             }
-                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-                                viewMode ===
-                                "infinite"
+                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${viewMode ===
+                                    "infinite"
                                     ? "bg-blue-600 text-white"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                            }`}
+                                }`}
                         >
                             Infinite List
                         </button>
@@ -903,7 +911,7 @@ const { showToast } = useToast();
                                     {sort.field}{" "}
 
                                     {sort.direction ===
-                                    "asc"
+                                        "asc"
                                         ? "↑"
                                         : "↓"}
                                 </span>
@@ -917,7 +925,7 @@ const { showToast } = useToast();
                 {/* ================================= */}
 
                 {viewMode ===
-                "infinite" ? (
+                    "infinite" ? (
                     <div className="mt-6">
                         <EmployeeInfiniteList
                             search={
@@ -1007,96 +1015,95 @@ const { showToast } = useToast();
 
                                 {selectedIds.length >
                                     0 && (
-                                    <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                            <div>
-                                                <p className="font-medium text-blue-900">
-                                                    {
-                                                        selectedIds.length
-                                                    }{" "}
-                                                    employee
-                                                    {selectedIds.length !==
-                                                    1
-                                                        ? "s"
-                                                        : ""}{" "}
-                                                    selected
-                                                </p>
+                                        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                <div>
+                                                    <p className="font-medium text-blue-900">
+                                                        {
+                                                            selectedIds.length
+                                                        }{" "}
+                                                        employee
+                                                        {selectedIds.length !==
+                                                            1
+                                                            ? "s"
+                                                            : ""}{" "}
+                                                        selected
+                                                    </p>
 
-                                                <p className="text-sm text-blue-700">
-                                                    Choose an
-                                                    action for
-                                                    the selected
-                                                    employees.
-                                                </p>
+                                                    <p className="text-sm text-blue-700">
+                                                        Choose an
+                                                        action for
+                                                        the selected
+                                                        employees.
+                                                    </p>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={
+                                                        handleBulkDeactivate
+                                                    }
+                                                    disabled={
+                                                        isBulkUpdating
+                                                    }
+                                                    className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                                                >
+                                                    {isBulkUpdating
+                                                        ? "Updating..."
+                                                        : "Deactivate Selected"}
+                                                </button>
                                             </div>
 
-                                            <button
-                                                type="button"
-                                                onClick={
-                                                    handleBulkDeactivate
-                                                }
-                                                disabled={
-                                                    isBulkUpdating
-                                                }
-                                                className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                                            >
-                                                {isBulkUpdating
-                                                    ? "Updating..."
-                                                    : "Deactivate Selected"}
-                                            </button>
-                                        </div>
+                                            {bulkProgress && (
+                                                <div className="mt-4">
+                                                    <div className="mb-1 flex items-center justify-between text-sm">
+                                                        <span className="font-medium text-blue-900">
+                                                            Updating
+                                                            employees...
+                                                        </span>
 
-                                        {bulkProgress && (
-                                            <div className="mt-4">
-                                                <div className="mb-1 flex items-center justify-between text-sm">
-                                                    <span className="font-medium text-blue-900">
-                                                        Updating
-                                                        employees...
-                                                    </span>
+                                                        <span className="text-blue-700">
+                                                            {
+                                                                bulkProgress.completed
+                                                            }{" "}
+                                                            /{" "}
+                                                            {
+                                                                bulkProgress.total
+                                                            }
+                                                        </span>
+                                                    </div>
 
-                                                    <span className="text-blue-700">
-                                                        {
-                                                            bulkProgress.completed
-                                                        }{" "}
-                                                        /{" "}
-                                                        {
+                                                    <div
+                                                        className="h-2 w-full overflow-hidden rounded-full bg-blue-200"
+                                                        role="progressbar"
+                                                        aria-valuemin={
+                                                            0
+                                                        }
+                                                        aria-valuemax={
                                                             bulkProgress.total
                                                         }
-                                                    </span>
+                                                        aria-valuenow={
+                                                            bulkProgress.completed
+                                                        }
+                                                        aria-label="Employee bulk update progress"
+                                                    >
+                                                        <div
+                                                            className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                                                            style={{
+                                                                width: `${bulkProgress.total >
+                                                                        0
+                                                                        ? (bulkProgress.completed /
+                                                                            bulkProgress.total) *
+                                                                        100
+                                                                        : 0
+                                                                    }%`,
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </div>
-
-                                                <div
-                                                    className="h-2 w-full overflow-hidden rounded-full bg-blue-200"
-                                                    role="progressbar"
-                                                    aria-valuemin={
-                                                        0
-                                                    }
-                                                    aria-valuemax={
-                                                        bulkProgress.total
-                                                    }
-                                                    aria-valuenow={
-                                                        bulkProgress.completed
-                                                    }
-                                                    aria-label="Employee bulk update progress"
-                                                >
-                                                    <div
-                                                        className="h-full rounded-full bg-blue-600 transition-all duration-300"
-                                                        style={{
-                                                            width: `${
-                                                                bulkProgress.total >
-                                                                0
-                                                                    ? (bulkProgress.completed /
-                                                                          bulkProgress.total) *
-                                                                      100
-                                                                    : 0
-                                                            }%`,
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                            )}
+                                        </div>
+                                    )}
 
                                 {/* Bulk error */}
 
@@ -1114,7 +1121,7 @@ const { showToast } = useToast();
                                 {/* Employee results */}
 
                                 {data.data.length ===
-                                0 ? (
+                                    0 ? (
                                     <p className="rounded-lg border p-6 text-gray-600">
                                         No employees
                                         found.
@@ -1133,7 +1140,7 @@ const { showToast } = useToast();
                                                             checked={
                                                                 data.data
                                                                     .length >
-                                                                    0 &&
+                                                                0 &&
                                                                 data.data.every(
                                                                     (
                                                                         employee,
@@ -1267,12 +1274,11 @@ const { showToast } = useToast();
 
                                                             <td className="px-4 py-3">
                                                                 <span
-                                                                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                                                                        employee.status ===
-                                                                        "active"
+                                                                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${employee.status ===
+                                                                            "active"
                                                                             ? "bg-green-100 text-green-700"
                                                                             : "bg-gray-100 text-gray-600"
-                                                                    }`}
+                                                                        }`}
                                                                 >
                                                                     {
                                                                         employee.status
@@ -1402,12 +1408,11 @@ const { showToast } = useToast();
                                                                 </p>
 
                                                                 <span
-                                                                    className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
-                                                                        employee.status ===
-                                                                        "active"
+                                                                    className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${employee.status ===
+                                                                            "active"
                                                                             ? "bg-green-100 text-green-700"
                                                                             : "bg-gray-100 text-gray-600"
-                                                                    }`}
+                                                                        }`}
                                                                 >
                                                                     {
                                                                         employee.status
@@ -1445,7 +1450,7 @@ const { showToast } = useToast();
                                         onClick={() =>
                                             goToPage(
                                                 page -
-                                                    1,
+                                                1,
                                             )
                                         }
                                         className="rounded-lg border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1473,7 +1478,7 @@ const { showToast } = useToast();
                                         onClick={() =>
                                             goToPage(
                                                 page +
-                                                    1,
+                                                1,
                                             )
                                         }
                                         className="rounded-lg border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1544,7 +1549,7 @@ function SortableHeader({
                 {sort && (
                     <span>
                         {sort.direction ===
-                        "asc"
+                            "asc"
                             ? "↑"
                             : "↓"}
                     </span>

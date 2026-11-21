@@ -5,7 +5,16 @@ import {
     waitFor,
 } from "@testing-library/react";
 
+import ToastProvider from "@/components/ToastProvider";
 import EmployeesPage from "@/app/(dashboard)/employees/page";
+
+function renderEmployeesPage() {
+    return render(
+        <ToastProvider>
+            <EmployeesPage />
+        </ToastProvider>,
+    );
+}
 
 const mockPush = jest.fn();
 
@@ -37,7 +46,6 @@ const mockEmployees = [
 ];
 
 const mockGetEmployees = jest.fn();
-
 const mockBulkUpdateStatus = jest.fn();
 const mockUpdateEmployee = jest.fn();
 
@@ -54,6 +62,7 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/features/auth/RoleGuard", () => ({
     __esModule: true,
+
     default: ({
         children,
     }: {
@@ -76,6 +85,7 @@ jest.mock("@/features/employees/employeeApi", () => ({
                 page: 1,
                 totalPages: 2,
             },
+
             isLoading: false,
             isError: false,
             error: undefined,
@@ -130,7 +140,7 @@ describe("EmployeesPage", () => {
     });
 
     it("renders the employee directory", () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         expect(
             screen.getByRole("heading", {
@@ -152,7 +162,7 @@ describe("EmployeesPage", () => {
     });
 
     it("renders employee data from the API", () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         expect(
             screen.getAllByText("John Doe").length,
@@ -172,7 +182,7 @@ describe("EmployeesPage", () => {
     });
 
     it("updates the URL when searching for an employee", async () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         const searchInput =
             screen.getByLabelText("Search employees");
@@ -191,7 +201,7 @@ describe("EmployeesPage", () => {
     });
 
     it("updates the URL when department filter changes", async () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.change(
             screen.getByLabelText("Department"),
@@ -210,7 +220,7 @@ describe("EmployeesPage", () => {
     });
 
     it("updates the URL when status filter changes", async () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.change(
             screen.getByLabelText("Status"),
@@ -231,7 +241,7 @@ describe("EmployeesPage", () => {
     it("resets pagination to page 1 when a filter changes", async () => {
         mockSearchParams.set("page", "4");
 
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.change(
             screen.getByLabelText("Department"),
@@ -250,7 +260,7 @@ describe("EmployeesPage", () => {
     });
 
     it("updates the URL when join date range changes", async () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.change(
             screen.getByLabelText("Join Date From"),
@@ -269,7 +279,7 @@ describe("EmployeesPage", () => {
     });
 
     it("moves to the next page", async () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.click(
             screen.getByRole("button", {
@@ -285,7 +295,7 @@ describe("EmployeesPage", () => {
     });
 
     it("updates sorting when a column header is clicked", async () => {
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.click(
             screen.getByRole("button", {
@@ -306,7 +316,7 @@ describe("EmployeesPage", () => {
             "firstName:asc,department:asc",
         );
 
-        render(<EmployeesPage />);
+        renderEmployeesPage();
 
         fireEvent.click(
             screen.getByRole("button", {
@@ -321,91 +331,94 @@ describe("EmployeesPage", () => {
         });
     });
 
-   it("selects an employee", () => {
-    render(<EmployeesPage />);
+    it("selects an employee", () => {
+        renderEmployeesPage();
 
-    const checkboxes = screen.getAllByRole("checkbox", {
-        name: "Select John Doe",
+        const checkboxes =
+            screen.getAllByRole("checkbox", {
+                name: "Select John Doe",
+            });
+
+        expect(checkboxes).toHaveLength(2);
+
+        expect(checkboxes[0]).not.toBeChecked();
+
+        fireEvent.click(checkboxes[0]);
+
+        expect(checkboxes[0]).toBeChecked();
     });
 
-    expect(checkboxes).toHaveLength(2);
+    it("selects all employees on the current page", () => {
+        renderEmployeesPage();
 
-    expect(checkboxes[0]).not.toBeChecked();
+        const selectAllCheckbox =
+            screen.getByRole("checkbox", {
+                name: "Select all employees on this page",
+            });
 
-    fireEvent.click(checkboxes[0]);
+        fireEvent.click(selectAllCheckbox);
 
-    expect(checkboxes[0]).toBeChecked();
-});
+        const johnCheckboxes =
+            screen.getAllByRole("checkbox", {
+                name: "Select John Doe",
+            });
 
-   it("selects all employees on the current page", () => {
-    render(<EmployeesPage />);
+        const janeCheckboxes =
+            screen.getAllByRole("checkbox", {
+                name: "Select Jane Smith",
+            });
 
-    const selectAllCheckbox =
-        screen.getByRole("checkbox", {
-            name: "Select all employees on this page",
-        });
+        expect(johnCheckboxes).toHaveLength(2);
 
-    fireEvent.click(selectAllCheckbox);
+        expect(janeCheckboxes).toHaveLength(2);
 
-    const johnCheckboxes =
-        screen.getAllByRole("checkbox", {
-            name: "Select John Doe",
-        });
+        expect(johnCheckboxes[0]).toBeChecked();
+        expect(johnCheckboxes[1]).toBeChecked();
 
-    const janeCheckboxes =
-        screen.getAllByRole("checkbox", {
-            name: "Select Jane Smith",
-        });
-
-    expect(johnCheckboxes).toHaveLength(2);
-    expect(janeCheckboxes).toHaveLength(2);
-
-    expect(johnCheckboxes[0]).toBeChecked();
-    expect(johnCheckboxes[1]).toBeChecked();
-
-    expect(janeCheckboxes[0]).toBeChecked();
-    expect(janeCheckboxes[1]).toBeChecked();
-});
-
-  it("shows the bulk deactivate action when an employee is selected", () => {
-    render(<EmployeesPage />);
-
-    const johnCheckboxes =
-        screen.getAllByRole("checkbox", {
-            name: "Select John Doe",
-        });
-
-    fireEvent.click(johnCheckboxes[0]);
-
-    expect(
-        screen.getByRole("button", {
-            name: "Deactivate Selected",
-        }),
-    ).toBeInTheDocument();
-});
-it("bulk deactivates selected employees", async () => {
-    render(<EmployeesPage />);
-
-    const johnCheckboxes = screen.getAllByRole("checkbox", {
-        name: "Select John Doe",
+        expect(janeCheckboxes[0]).toBeChecked();
+        expect(janeCheckboxes[1]).toBeChecked();
     });
 
-    fireEvent.click(johnCheckboxes[0]);
+    it("shows the bulk deactivate action when an employee is selected", () => {
+        renderEmployeesPage();
 
-    const deactivateButton = screen.getByRole("button", {
-        name: "Deactivate Selected",
-    });
+        const johnCheckboxes =
+            screen.getAllByRole("checkbox", {
+                name: "Select John Doe",
+            });
 
-    fireEvent.click(deactivateButton);
+        fireEvent.click(johnCheckboxes[0]);
 
-    await waitFor(() => {
         expect(
-            screen.getByRole("progressbar", {
-                name: "Employee bulk update progress",
+            screen.getByRole("button", {
+                name: "Deactivate Selected",
             }),
         ).toBeInTheDocument();
     });
 
-    expect(deactivateButton).toBeInTheDocument();
-});
+    it("bulk deactivates selected employees", async () => {
+        renderEmployeesPage();
+
+        const johnCheckboxes =
+            screen.getAllByRole("checkbox", {
+                name: "Select John Doe",
+            });
+
+        fireEvent.click(johnCheckboxes[0]);
+
+        const deactivateButton =
+            screen.getByRole("button", {
+                name: "Deactivate Selected",
+            });
+
+        fireEvent.click(deactivateButton);
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole("progressbar", {
+                    name: "Employee bulk update progress",
+                }),
+            ).toBeInTheDocument();
+        });
+    });
 });
