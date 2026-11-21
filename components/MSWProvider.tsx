@@ -9,13 +9,9 @@ interface MSWProviderProps {
 let workerStartPromise: Promise<void> | null = null;
 
 export default function MSWProvider({ children }: MSWProviderProps) {
-    const [ready, setReady] = useState(process.env.NODE_ENV !== "development");
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
-        if (process.env.NODE_ENV !== "development") {
-            return;
-        }
-
         if (!workerStartPromise) {
             workerStartPromise = import("@/mocks/browser")
                 .then(async ({ worker }) => {
