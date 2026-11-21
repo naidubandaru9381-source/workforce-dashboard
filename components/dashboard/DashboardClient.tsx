@@ -89,13 +89,13 @@ export default function DashboardClient({
    * the initial dashboard load.
    */
   useEffect(() => {
-   dispatch(
-  dashboardApi.util.upsertQueryData(
-    "getDashboardSummary",
-    initialDateRange,
-    initialSummary,
-  ),
-);
+    dispatch(
+      dashboardApi.util.upsertQueryData(
+        "getDashboardSummary",
+        initialDateRange,
+        initialSummary,
+      ),
+    );
   }, [
     dispatch,
     initialDateRange,
@@ -154,8 +154,7 @@ export default function DashboardClient({
 
   /*
    * For 30 days:
-   *   data is not required because initialSummary
-   *   came from the server.
+   *   initialSummary comes from the server.
    *
    * For 60/90 days:
    *   data comes from RTK Query.
@@ -175,14 +174,14 @@ export default function DashboardClient({
     !data
   ) {
     return (
-      <main className="p-6">
+      <main className="bg-gray-50 p-6 text-gray-900 dark:bg-gray-950 dark:text-white">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-bold">
               Dashboard
             </h1>
 
-            <p className="mt-1 text-gray-600">
+            <p className="mt-1 text-gray-600 dark:text-gray-400">
               Workforce and project overview
             </p>
           </div>
@@ -211,7 +210,7 @@ export default function DashboardClient({
                 handlePrefetch("60");
                 handlePrefetch("90");
               }}
-              className="rounded-lg border px-3 py-2 text-sm"
+              className="rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             >
               <option value="30">
                 Last 30 days
@@ -257,13 +256,13 @@ export default function DashboardClient({
     !dashboardData
   ) {
     return (
-      <main className="p-6">
+      <main className="bg-gray-50 p-6 text-gray-900 dark:bg-gray-950 dark:text-white">
         <h1 className="text-3xl font-bold">
           Dashboard
         </h1>
 
         <div
-          className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"
+          className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
           role="alert"
         >
           <p className="font-medium">
@@ -293,7 +292,7 @@ export default function DashboardClient({
   }
 
   return (
-    <main className="p-6">
+    <main className="bg-gray-50 p-6 text-gray-900 dark:bg-gray-950 dark:text-white">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
@@ -301,7 +300,7 @@ export default function DashboardClient({
             Dashboard
           </h1>
 
-          <p className="mt-1 text-gray-600">
+          <p className="mt-1 text-gray-600 dark:text-gray-400">
             Workforce and project overview
           </p>
         </div>
@@ -330,7 +329,7 @@ export default function DashboardClient({
               handlePrefetch("60");
               handlePrefetch("90");
             }}
-            className="rounded-lg border px-3 py-2 text-sm"
+            className="rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           >
             <option value="30">
               Last 30 days
@@ -347,7 +346,7 @@ export default function DashboardClient({
 
           {isFetching && (
             <span
-              className="text-xs text-gray-500"
+              className="text-xs text-gray-500 dark:text-gray-400"
               aria-live="polite"
             >
               Updating...

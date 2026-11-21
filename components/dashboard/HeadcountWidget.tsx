@@ -14,17 +14,17 @@ export default function HeadcountWidget({
 
   return (
     <section
-      className="rounded-xl border bg-white p-5 shadow-sm"
+      className="rounded-xl border bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
       aria-labelledby="headcount-heading"
     >
       <h2
         id="headcount-heading"
-        className="text-lg font-semibold"
+        className="text-lg font-semibold text-gray-900 dark:text-white"
       >
         Headcount by department
       </h2>
 
-      <p className="mt-1 text-sm text-gray-500">
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Active employees grouped by department.
       </p>
 
@@ -41,15 +41,15 @@ export default function HeadcountWidget({
 
           return (
             <div key={item.department}>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                 <span>{item.department}</span>
 
-                <span className="font-medium">
+                <span className="font-medium text-gray-900 dark:text-white">
                   {item.count}
                 </span>
               </div>
 
-              <div className="mt-1 h-3 rounded-full bg-gray-100">
+              <div className="mt-1 h-3 rounded-full bg-gray-100 dark:bg-gray-700">
                 <div
                   className="h-3 rounded-full bg-blue-600"
                   style={{

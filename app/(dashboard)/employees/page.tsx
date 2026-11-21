@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-
+import { useToast } from "@/components/ToastProvider";
 import EditEmployeePanel from "@/components/employees/EditEmployeePanel";
 import EmployeeInfiniteList from "@/features/employees/EmployeeInfiniteList";
 import RoleGuard from "@/features/auth/RoleGuard";
@@ -34,10 +34,8 @@ export default function EmployeesPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // -----------------------------
-    // View Mode
-    // -----------------------------
-
+  
+const { showToast } = useToast();
     const viewMode =
         searchParams.get("view") === "infinite"
             ? "infinite"
@@ -81,9 +79,7 @@ export default function EmployeesPage() {
     const [updateEmployee, { isLoading: isUpdatingEmployee }] =
         useUpdateEmployeeMutation();
 
-    // -----------------------------
-    // URL state
-    // -----------------------------
+   
 
     const page = Number(
         searchParams.get("page") ?? "1",
@@ -329,54 +325,66 @@ export default function EmployeesPage() {
         setServerErrors({});
     };
 
-    const handleSaveEmployee = async (
-        values: EmployeeFormValues,
-    ) => {
-        if (!editingEmployee) {
+   const handleSaveEmployee = async (
+    values: EmployeeFormValues,
+) => {
+    if (!editingEmployee) {
+        return;
+    }
+
+    setServerErrors({});
+
+    try {
+        await updateEmployee({
+            id: editingEmployee.id,
+            data: values,
+        }).unwrap();
+
+        setEditingEmployee(null);
+        setServerErrors({});
+
+        showToast(
+            "Employee updated successfully.",
+            "success",
+        );
+    } catch (error) {
+        const apiError = error as {
+            status?: number;
+            data?: {
+                message?: string;
+                errors?: Record<string, string>;
+            };
+        };
+
+        if (
+            apiError.status === 422 &&
+            apiError.data?.errors
+        ) {
+            setServerErrors(
+                apiError.data.errors,
+            );
+
+            showToast(
+                "Please correct the highlighted fields.",
+                "error",
+            );
+
             return;
         }
 
-        setServerErrors({});
+        setServerErrors({
+            form:
+                apiError.data?.message ??
+                "Unable to update employee. Please try again.",
+        });
 
-        try {
-            await updateEmployee({
-                id: editingEmployee.id,
-                data: values,
-            }).unwrap();
-
-            setEditingEmployee(null);
-            setServerErrors({});
-        } catch (error) {
-            const apiError = error as {
-                status?: number;
-                data?: {
-                    message?: string;
-                    errors?: Record<
-                        string,
-                        string
-                    >;
-                };
-            };
-
-            if (
-                apiError.status === 422 &&
-                apiError.data?.errors
-            ) {
-                setServerErrors(
-                    apiError.data.errors,
-                );
-
-                return;
-            }
-
-            setServerErrors({
-                form:
-                    apiError.data?.message ??
-                    "Unable to update employee. Please try again.",
-            });
-        }
-    };
-
+        showToast(
+            apiError.data?.message ??
+                "Unable to update employee. Please try again.",
+            "error",
+        );
+    }
+};
     
     const updateSearch = (
         value: string,
