@@ -67,11 +67,11 @@ function getUserIdFromRefreshToken(
 
   const parts = refreshToken.split("-");
 
-  if (parts.length < 4) {
+  if (parts.length < 3) {
     return null;
   }
 
-  const userId = `${parts[0]}-${parts[1]}`;
+  const userId = `${parts[1]}-${parts[2]}`;
 
   const userExists = users.some(
     (account) => account.user.id === userId,
