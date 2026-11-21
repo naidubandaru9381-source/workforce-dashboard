@@ -7,6 +7,6 @@ export const handlers = [
   ...authHandlers,
   ...employeeHandlers,
   ...projectHandlers,   
-  ...leaveHandlers,
   ...dashboardHandlers,
+  ...leaveHandlers,
 ];

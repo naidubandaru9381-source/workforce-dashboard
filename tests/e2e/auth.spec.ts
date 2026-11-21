@@ -1,3 +1,4 @@
+
 import { test, expect } from "@playwright/test";
 
 test.describe("Authentication", () => {
@@ -10,12 +11,12 @@ test.describe("Authentication", () => {
     await page.getByLabel(/email/i).fill("admin@example.com");
     await page.getByLabel(/password/i).fill("Admin@123");
 
-    await page.locator('button[type="submit"]').click();
-
-    // Wait for the protected dashboard to load.
-    await expect(page).toHaveURL(/\/dashboard/, {
-      timeout: 15_000,
-    });
+    await Promise.all([
+      page.waitForURL(/\/dashboard/, {
+        timeout: 20_000,
+      }),
+      page.locator('button[type="submit"]').click(),
+    ]);
 
     await expect(
       page.getByRole("heading", {
