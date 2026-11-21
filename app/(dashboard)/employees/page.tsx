@@ -4,13 +4,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import EditEmployeePanel from "@/components/employees/EditEmployeePanel";
+import EmployeeInfiniteList from "@/features/employees/EmployeeInfiniteList";
 import RoleGuard from "@/features/auth/RoleGuard";
+
 import {
     useBulkUpdateStatusMutation,
     useGetEmployeesQuery,
     useUpdateEmployeeMutation,
 } from "@/features/employees/employeeApi";
+
 import { useDebounce } from "@/features/employees/hooks/useDebounce";
+
 import type { EmployeeFormValues } from "@/lib/validation/employee.schema";
 import type { Employee } from "@/types/employee";
 
@@ -31,11 +35,25 @@ export default function EmployeesPage() {
     const searchParams = useSearchParams();
 
     // -----------------------------
+    // View Mode
+    // -----------------------------
+
+    const viewMode =
+        searchParams.get("view") === "infinite"
+            ? "infinite"
+            : "table";
+
+    // -----------------------------
     // Selection / Bulk Actions
     // -----------------------------
 
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [bulkError, setBulkError] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>(
+        [],
+    );
+
+    const [bulkError, setBulkError] = useState<string | null>(
+        null,
+    );
 
     const [bulkProgress, setBulkProgress] = useState<{
         completed: number;
@@ -67,15 +85,15 @@ export default function EmployeesPage() {
     // URL state
     // -----------------------------
 
-    const page = Number(searchParams.get("page") ?? "1");
+    const page = Number(
+        searchParams.get("page") ?? "1",
+    );
 
     const pageSize = Number(
         searchParams.get("pageSize") ?? "10",
     );
 
-    // -----------------------------
-    // Filters
-    // -----------------------------
+
 
     const [searchInput, setSearchInput] = useState(
         searchParams.get("search") ?? "",
@@ -101,61 +119,89 @@ export default function EmployeesPage() {
     // Multi-column sorting
     // -----------------------------
 
-   const [sortFields, setSortFields] = useState<SortField[]>(
-    (): SortField[] => {
-        const sortParam = searchParams.get("sort");
+    const [sortFields, setSortFields] = useState<SortField[]>(
+        (): SortField[] => {
+            const sortParam = searchParams.get("sort");
 
-        if (!sortParam) {
-            return [
-                {
-                    field: "firstName",
-                    direction: "asc",
-                },
-            ];
-        }
+            if (!sortParam) {
+                return [
+                    {
+                        field: "firstName",
+                        direction: "asc",
+                    },
+                ];
+            }
 
-        return sortParam
-            .split(",")
-            .map((item): SortField => {
-                const [field, direction] = item.split(":");
+            return sortParam
+                .split(",")
+                .map((item): SortField => {
+                    const [field, direction] =
+                        item.split(":");
 
-                return {
-                    field,
-                    direction: direction === "desc" ? "desc" : "asc",
-                };
-            })
-            .filter((item) => item.field);
-    },
-);
+                    return {
+                        field,
+                        direction:
+                            direction === "desc"
+                                ? "desc"
+                                : "asc",
+                    };
+                })
+                .filter((item) => item.field);
+        },
+    );
 
     const debouncedSearch = useDebounce(
         searchInput,
         400,
     );
 
-    // -----------------------------
-    // Employees API
-    // -----------------------------
-
+  
     const {
         data,
         isLoading,
         isError,
         error,
-    } = useGetEmployeesQuery({
-        page,
-        pageSize,
-        search: debouncedSearch || undefined,
-        department: department || undefined,
-        status: status || undefined,
-        joinDateFrom: joinDateFrom || undefined,
-        joinDateTo: joinDateTo || undefined,
-        sort: sortFields,
-    });
+    } = useGetEmployeesQuery(
+        {
+            page,
+            pageSize,
+            search:
+                debouncedSearch || undefined,
+            department:
+                department || undefined,
+            status:
+                status || undefined,
+            joinDateFrom:
+                joinDateFrom || undefined,
+            joinDateTo:
+                joinDateTo || undefined,
+            sort: sortFields,
+        },
+        {
+            skip: viewMode === "infinite",
+        },
+    );
 
-    // -----------------------------
-    // Employee Selection
-    // -----------------------------
+
+    const updateViewMode = (
+        mode: "table" | "infinite",
+    ) => {
+        const params = new URLSearchParams(
+            searchParams.toString(),
+        );
+
+        params.set("view", mode);
+        params.set("page", "1");
+
+       
+        setSelectedIds([]);
+        setBulkError(null);
+        setBulkProgress(null);
+
+        router.push(
+            `/employees?${params.toString()}`,
+        );
+    };
 
     const toggleEmployeeSelection = (
         employeeId: string,
@@ -163,8 +209,8 @@ export default function EmployeesPage() {
         setSelectedIds((current) =>
             current.includes(employeeId)
                 ? current.filter(
-                    (id) => id !== employeeId,
-                )
+                      (id) => id !== employeeId,
+                  )
                 : [...current, employeeId],
         );
     };
@@ -185,7 +231,9 @@ export default function EmployeesPage() {
             setSelectedIds((current) =>
                 current.filter(
                     (id) =>
-                        !currentPageIds.includes(id),
+                        !currentPageIds.includes(
+                            id,
+                        ),
                 ),
             );
         } else {
@@ -198,9 +246,6 @@ export default function EmployeesPage() {
         }
     };
 
-    // -----------------------------
-    // Bulk Deactivate
-    // -----------------------------
 
     const handleBulkDeactivate = async () => {
         if (selectedIds.length === 0) {
@@ -223,7 +268,8 @@ export default function EmployeesPage() {
 
             const failed =
                 response.results.filter(
-                    (result) => !result.success,
+                    (result) =>
+                        !result.success,
                 );
 
             if (failed.length > 0) {
@@ -235,7 +281,8 @@ export default function EmployeesPage() {
             const successfulIds =
                 response.results
                     .filter(
-                        (result) => result.success,
+                        (result) =>
+                            result.success,
                     )
                     .map(
                         (result) =>
@@ -245,7 +292,9 @@ export default function EmployeesPage() {
             setSelectedIds((current) =>
                 current.filter(
                     (id) =>
-                        !successfulIds.includes(id),
+                        !successfulIds.includes(
+                            id,
+                        ),
                 ),
             );
 
@@ -267,9 +316,6 @@ export default function EmployeesPage() {
         }
     };
 
-    // -----------------------------
-    // Edit Employee
-    // -----------------------------
 
     const handleEditEmployee = (
         employee: Employee,
@@ -305,7 +351,10 @@ export default function EmployeesPage() {
                 status?: number;
                 data?: {
                     message?: string;
-                    errors?: Record<string, string>;
+                    errors?: Record<
+                        string,
+                        string
+                    >;
                 };
             };
 
@@ -328,10 +377,7 @@ export default function EmployeesPage() {
         }
     };
 
-    // -----------------------------
-    // Search
-    // -----------------------------
-
+    
     const updateSearch = (
         value: string,
     ) => {
@@ -355,9 +401,6 @@ export default function EmployeesPage() {
         );
     };
 
-    // -----------------------------
-    // Department
-    // -----------------------------
 
     const updateDepartment = (
         value: string,
@@ -385,10 +428,7 @@ export default function EmployeesPage() {
         );
     };
 
-    // -----------------------------
-    // Status
-    // -----------------------------
-
+    
     const updateStatus = (
         value: string,
     ) => {
@@ -412,9 +452,7 @@ export default function EmployeesPage() {
         );
     };
 
-    // -----------------------------
-    // Join Date From
-    // -----------------------------
+   
 
     const updateJoinDateFrom = (
         value: string,
@@ -501,7 +539,7 @@ export default function EmployeesPage() {
         } else {
             const existing =
                 updatedSort[
-                existingIndex
+                    existingIndex
                 ];
 
             if (
@@ -586,9 +624,7 @@ export default function EmployeesPage() {
         );
     };
 
-    // -----------------------------
-    // Render
-    // -----------------------------
+  
 
     return (
         <RoleGuard
@@ -598,7 +634,6 @@ export default function EmployeesPage() {
             ]}
         >
             <main className="min-h-screen p-4 md:p-8">
-
                 {/* Page heading */}
 
                 <div>
@@ -638,7 +673,6 @@ export default function EmployeesPage() {
                 {/* Filters */}
 
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:flex lg:flex-wrap">
-
                     {/* Department */}
 
                     <div className="min-w-0">
@@ -774,6 +808,69 @@ export default function EmployeesPage() {
                     </div>
                 </div>
 
+                {/* View Mode */}
+
+                <div className="mt-6 flex flex-col gap-3 rounded-lg border bg-white p-4 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="font-semibold">
+                            Employee View
+                        </h2>
+
+                        <p className="text-sm text-gray-500">
+                            Choose between paginated table
+                            and virtualized infinite list.
+                        </p>
+                    </div>
+
+                    <div
+                        className="flex w-fit rounded-lg border p-1"
+                        role="group"
+                        aria-label="Employee view"
+                    >
+                        <button
+                            type="button"
+                            onClick={() =>
+                                updateViewMode(
+                                    "table",
+                                )
+                            }
+                            aria-pressed={
+                                viewMode ===
+                                "table"
+                            }
+                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+                                viewMode ===
+                                "table"
+                                    ? "bg-blue-600 text-white"
+                                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                        >
+                            Table
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                updateViewMode(
+                                    "infinite",
+                                )
+                            }
+                            aria-pressed={
+                                viewMode ===
+                                "infinite"
+                            }
+                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+                                viewMode ===
+                                "infinite"
+                                    ? "bg-blue-600 text-white"
+                                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                        >
+                            Infinite List
+                        </button>
+                    </div>
+                </div>
+
                 {/* Sorting information */}
 
                 {sortFields.length > 0 && (
@@ -788,7 +885,9 @@ export default function EmployeesPage() {
                                 index,
                             ) => (
                                 <span
-                                    key={sort.field}
+                                    key={
+                                        sort.field
+                                    }
                                 >
                                     {index > 0 &&
                                         " → "}
@@ -796,7 +895,7 @@ export default function EmployeesPage() {
                                     {sort.field}{" "}
 
                                     {sort.direction ===
-                                        "asc"
+                                    "asc"
                                         ? "↑"
                                         : "↓"}
                                 </span>
@@ -805,505 +904,578 @@ export default function EmployeesPage() {
                     </div>
                 )}
 
-                {/* Loading */}
+                {/* ================================= */}
+                {/* INFINITE LIST VIEW                */}
+                {/* ================================= */}
 
-                {isLoading && (
-                    <p className="mt-6 text-gray-600">
-                        Loading employees...
-                    </p>
-                )}
-
-                {/* Error */}
-
-                {isError && (
-                    <pre className="mt-6 overflow-x-auto rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                        {JSON.stringify(
-                            error,
-                            null,
-                            2,
-                        )}
-                    </pre>
-                )}
-
-                {/* Results */}
-
-                {data && (
+                {viewMode ===
+                "infinite" ? (
                     <div className="mt-6">
+                        <EmployeeInfiniteList
+                            search={
+                                debouncedSearch ||
+                                undefined
+                            }
+                            department={
+                                department ||
+                                undefined
+                            }
+                            status={
+                                status ||
+                                undefined
+                            }
+                            joinDateFrom={
+                                joinDateFrom ||
+                                undefined
+                            }
+                            joinDateTo={
+                                joinDateTo ||
+                                undefined
+                            }
+                            sort={
+                                sortFields
+                            }
+                            onEdit={
+                                handleEditEmployee
+                            }
+                        />
+                    </div>
+                ) : (
+                    <>
+                        {/* ================================= */}
+                        {/* TABLE VIEW                         */}
+                        {/* ================================= */}
 
-                        {/* Results header */}
+                        {/* Loading */}
 
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                            <p>
-                                Total employees:{" "}
-                                <strong>
-                                    {data.total}
-                                </strong>
+                        {isLoading && (
+                            <p className="mt-6 text-gray-600">
+                                Loading employees...
                             </p>
+                        )}
 
-                            <p className="text-sm text-gray-500">
-                                Page {data.page} of{" "}
-                                {data.totalPages}
-                            </p>
-                        </div>
+                        {/* Error */}
 
-                        {/* Bulk action */}
+                        {isError && (
+                            <pre className="mt-6 overflow-x-auto rounded-lg bg-red-50 p-4 text-sm text-red-600">
+                                {JSON.stringify(
+                                    error,
+                                    null,
+                                    2,
+                                )}
+                            </pre>
+                        )}
 
-                        {selectedIds.length > 0 && (
-                            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <p className="font-medium text-blue-900">
-                                            {selectedIds.length} employee
-                                            {selectedIds.length !== 1
-                                                ? "s"
-                                                : ""}{" "}
-                                            selected
-                                        </p>
+                        {/* Results */}
 
-                                        <p className="text-sm text-blue-700">
-                                            Choose an action for the selected employees.
-                                        </p>
-                                    </div>
+                        {data && (
+                            <div className="mt-6">
+                                {/* Results header */}
 
-                                    <button
-                                        type="button"
-                                        onClick={
-                                            handleBulkDeactivate
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <p>
+                                        Total
+                                        employees:{" "}
+                                        <strong>
+                                            {
+                                                data.total
+                                            }
+                                        </strong>
+                                    </p>
+
+                                    <p className="text-sm text-gray-500">
+                                        Page{" "}
+                                        {
+                                            data.page
+                                        }{" "}
+                                        of{" "}
+                                        {
+                                            data.totalPages
                                         }
-                                        disabled={
-                                            isBulkUpdating
-                                        }
-                                        className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                                    >
-                                        {isBulkUpdating
-                                            ? "Updating..."
-                                            : "Deactivate Selected"}
-                                    </button>
+                                    </p>
                                 </div>
 
-                                {bulkProgress && (
-                                    <div className="mt-4">
-                                        <div className="mb-1 flex items-center justify-between text-sm">
-                                            <span className="font-medium text-blue-900">
-                                                Updating employees...
-                                            </span>
+                                {/* Bulk action */}
 
-                                            <span className="text-blue-700">
-                                                {
-                                                    bulkProgress.completed
-                                                }{" "}
-                                                /{" "}
-                                                {
-                                                    bulkProgress.total
+                                {selectedIds.length >
+                                    0 && (
+                                    <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="font-medium text-blue-900">
+                                                    {
+                                                        selectedIds.length
+                                                    }{" "}
+                                                    employee
+                                                    {selectedIds.length !==
+                                                    1
+                                                        ? "s"
+                                                        : ""}{" "}
+                                                    selected
+                                                </p>
+
+                                                <p className="text-sm text-blue-700">
+                                                    Choose an
+                                                    action for
+                                                    the selected
+                                                    employees.
+                                                </p>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    handleBulkDeactivate
                                                 }
-                                            </span>
+                                                disabled={
+                                                    isBulkUpdating
+                                                }
+                                                className="w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                                            >
+                                                {isBulkUpdating
+                                                    ? "Updating..."
+                                                    : "Deactivate Selected"}
+                                            </button>
                                         </div>
 
-                                        <div
-                                            className="h-2 w-full overflow-hidden rounded-full bg-blue-200"
-                                            role="progressbar"
-                                            aria-valuemin={0}
-                                            aria-valuemax={
-                                                bulkProgress.total
-                                            }
-                                            aria-valuenow={
-                                                bulkProgress.completed
-                                            }
-                                            aria-label="Employee bulk update progress"
-                                        >
-                                            <div
-                                                className="h-full rounded-full bg-blue-600 transition-all duration-300"
-                                                style={{
-                                                    width: `${
-                                                        bulkProgress.total >
+                                        {bulkProgress && (
+                                            <div className="mt-4">
+                                                <div className="mb-1 flex items-center justify-between text-sm">
+                                                    <span className="font-medium text-blue-900">
+                                                        Updating
+                                                        employees...
+                                                    </span>
+
+                                                    <span className="text-blue-700">
+                                                        {
+                                                            bulkProgress.completed
+                                                        }{" "}
+                                                        /{" "}
+                                                        {
+                                                            bulkProgress.total
+                                                        }
+                                                    </span>
+                                                </div>
+
+                                                <div
+                                                    className="h-2 w-full overflow-hidden rounded-full bg-blue-200"
+                                                    role="progressbar"
+                                                    aria-valuemin={
                                                         0
-                                                            ? (bulkProgress.completed /
-                                                                  bulkProgress.total) *
-                                                              100
-                                                            : 0
-                                                    }%`,
-                                                }}
-                                            />
+                                                    }
+                                                    aria-valuemax={
+                                                        bulkProgress.total
+                                                    }
+                                                    aria-valuenow={
+                                                        bulkProgress.completed
+                                                    }
+                                                    aria-label="Employee bulk update progress"
+                                                >
+                                                    <div
+                                                        className="h-full rounded-full bg-blue-600 transition-all duration-300"
+                                                        style={{
+                                                            width: `${
+                                                                bulkProgress.total >
+                                                                0
+                                                                    ? (bulkProgress.completed /
+                                                                          bulkProgress.total) *
+                                                                      100
+                                                                    : 0
+                                                            }%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Bulk error */}
+
+                                {bulkError && (
+                                    <div
+                                        role="alert"
+                                        className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                                    >
+                                        {
+                                            bulkError
+                                        }
+                                    </div>
+                                )}
+
+                                {/* Employee results */}
+
+                                {data.data.length ===
+                                0 ? (
+                                    <p className="rounded-lg border p-6 text-gray-600">
+                                        No employees
+                                        found.
+                                    </p>
+                                ) : (
+                                    <div className="rounded-lg border bg-white md:overflow-x-auto">
+                                        {/* Desktop table */}
+
+                                        <table className="hidden w-full min-w-[950px] text-left text-sm md:table">
+                                            <thead className="border-b bg-gray-50">
+                                                <tr>
+                                                    <th className="px-4 py-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            aria-label="Select all employees on this page"
+                                                            checked={
+                                                                data.data
+                                                                    .length >
+                                                                    0 &&
+                                                                data.data.every(
+                                                                    (
+                                                                        employee,
+                                                                    ) =>
+                                                                        selectedIds.includes(
+                                                                            employee.id,
+                                                                        ),
+                                                                )
+                                                            }
+                                                            onChange={
+                                                                toggleSelectAll
+                                                            }
+                                                        />
+                                                    </th>
+
+                                                    <SortableHeader
+                                                        label="Name"
+                                                        field="firstName"
+                                                        sortFields={
+                                                            sortFields
+                                                        }
+                                                        onSort={
+                                                            updateSort
+                                                        }
+                                                    />
+
+                                                    <SortableHeader
+                                                        label="Department"
+                                                        field="department"
+                                                        sortFields={
+                                                            sortFields
+                                                        }
+                                                        onSort={
+                                                            updateSort
+                                                        }
+                                                    />
+
+                                                    <SortableHeader
+                                                        label="Designation"
+                                                        field="designation"
+                                                        sortFields={
+                                                            sortFields
+                                                        }
+                                                        onSort={
+                                                            updateSort
+                                                        }
+                                                    />
+
+                                                    <SortableHeader
+                                                        label="Status"
+                                                        field="status"
+                                                        sortFields={
+                                                            sortFields
+                                                        }
+                                                        onSort={
+                                                            updateSort
+                                                        }
+                                                    />
+
+                                                    <SortableHeader
+                                                        label="Join Date"
+                                                        field="joinDate"
+                                                        sortFields={
+                                                            sortFields
+                                                        }
+                                                        onSort={
+                                                            updateSort
+                                                        }
+                                                    />
+
+                                                    <th className="px-4 py-3">
+                                                        Actions
+                                                    </th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {data.data.map(
+                                                    (
+                                                        employee,
+                                                    ) => (
+                                                        <tr
+                                                            key={
+                                                                employee.id
+                                                            }
+                                                            className="border-b last:border-b-0 hover:bg-gray-50"
+                                                        >
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    aria-label={`Select ${employee.firstName} ${employee.lastName}`}
+                                                                    checked={selectedIds.includes(
+                                                                        employee.id,
+                                                                    )}
+                                                                    onChange={() =>
+                                                                        toggleEmployeeSelection(
+                                                                            employee.id,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </td>
+
+                                                            <td className="px-4 py-3">
+                                                                <p className="font-medium">
+                                                                    {
+                                                                        employee.firstName
+                                                                    }{" "}
+                                                                    {
+                                                                        employee.lastName
+                                                                    }
+                                                                </p>
+
+                                                                <p className="text-xs text-gray-500">
+                                                                    {
+                                                                        employee.email
+                                                                    }
+                                                                </p>
+                                                            </td>
+
+                                                            <td className="px-4 py-3">
+                                                                {
+                                                                    employee.department
+                                                                }
+                                                            </td>
+
+                                                            <td className="px-4 py-3">
+                                                                {
+                                                                    employee.designation
+                                                                }
+                                                            </td>
+
+                                                            <td className="px-4 py-3">
+                                                                <span
+                                                                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                                        employee.status ===
+                                                                        "active"
+                                                                            ? "bg-green-100 text-green-700"
+                                                                            : "bg-gray-100 text-gray-600"
+                                                                    }`}
+                                                                >
+                                                                    {
+                                                                        employee.status
+                                                                    }
+                                                                </span>
+                                                            </td>
+
+                                                            <td className="px-4 py-3">
+                                                                {
+                                                                    employee.joinDate
+                                                                }
+                                                            </td>
+
+                                                            <td className="px-4 py-3">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleEditEmployee(
+                                                                            employee,
+                                                                        )
+                                                                    }
+                                                                    className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                            </tbody>
+                                        </table>
+
+                                        {/* Mobile cards */}
+
+                                        <div className="space-y-3 p-3 md:hidden">
+                                            {data.data.map(
+                                                (
+                                                    employee,
+                                                ) => (
+                                                    <div
+                                                        key={
+                                                            employee.id
+                                                        }
+                                                        className="w-full rounded-lg border bg-white p-3 shadow-sm"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="flex min-w-0 items-start gap-3">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    aria-label={`Select ${employee.firstName} ${employee.lastName}`}
+                                                                    checked={selectedIds.includes(
+                                                                        employee.id,
+                                                                    )}
+                                                                    onChange={() =>
+                                                                        toggleEmployeeSelection(
+                                                                            employee.id,
+                                                                        )
+                                                                    }
+                                                                    className="mt-1 shrink-0"
+                                                                />
+
+                                                                <div className="min-w-0">
+                                                                    <p className="break-words font-medium text-gray-900">
+                                                                        {
+                                                                            employee.firstName
+                                                                        }{" "}
+                                                                        {
+                                                                            employee.lastName
+                                                                        }
+                                                                    </p>
+
+                                                                    <p className="break-all text-xs text-gray-500">
+                                                                        {
+                                                                            employee.email
+                                                                        }
+                                                                    </p>
+
+                                                                    <p className="mt-1 text-xs text-gray-500">
+                                                                        {
+                                                                            employee.employeeId
+                                                                        }
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleEditEmployee(
+                                                                        employee,
+                                                                    )
+                                                                }
+                                                                className="shrink-0 rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs text-gray-500">
+                                                                    Department
+                                                                </p>
+
+                                                                <p className="break-words font-medium">
+                                                                    {
+                                                                        employee.department
+                                                                    }
+                                                                </p>
+                                                            </div>
+
+                                                            <div className="min-w-0">
+                                                                <p className="text-xs text-gray-500">
+                                                                    Designation
+                                                                </p>
+
+                                                                <p className="break-words font-medium">
+                                                                    {
+                                                                        employee.designation
+                                                                    }
+                                                                </p>
+                                                            </div>
+
+                                                            <div>
+                                                                <p className="text-xs text-gray-500">
+                                                                    Status
+                                                                </p>
+
+                                                                <span
+                                                                    className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                                        employee.status ===
+                                                                        "active"
+                                                                            ? "bg-green-100 text-green-700"
+                                                                            : "bg-gray-100 text-gray-600"
+                                                                    }`}
+                                                                >
+                                                                    {
+                                                                        employee.status
+                                                                    }
+                                                                </span>
+                                                            </div>
+
+                                                            <div>
+                                                                <p className="text-xs text-gray-500">
+                                                                    Join Date
+                                                                </p>
+
+                                                                <p className="font-medium">
+                                                                    {
+                                                                        employee.joinDate
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            )}
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
 
-                        {/* Bulk error */}
+                                {/* Pagination */}
 
-                        {bulkError && (
-                            <div
-                                role="alert"
-                                className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-                            >
-                                {bulkError}
-                            </div>
-                        )}
+                                <div className="mt-6 flex flex-wrap items-center gap-3">
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            page <= 1
+                                        }
+                                        onClick={() =>
+                                            goToPage(
+                                                page -
+                                                    1,
+                                            )
+                                        }
+                                        className="rounded-lg border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Previous
+                                    </button>
 
-                        {/* Employee results */}
+                                    <span className="text-sm">
+                                        Page{" "}
+                                        {
+                                            data.page
+                                        }{" "}
+                                        of{" "}
+                                        {
+                                            data.totalPages
+                                        }
+                                    </span>
 
-                        {data.data.length === 0 ? (
-                            <p className="rounded-lg border p-6 text-gray-600">
-                                No employees found.
-                            </p>
-                        ) : (
-                            <div className="rounded-lg border bg-white md:overflow-x-auto">
-
-                                {/* Desktop table */}
-
-                                <table className="hidden w-full min-w-[950px] text-left text-sm md:table">
-
-                                    <thead className="border-b bg-gray-50">
-                                        <tr>
-
-                                            <th className="px-4 py-3">
-                                                <input
-                                                    type="checkbox"
-                                                    aria-label="Select all employees on this page"
-                                                    checked={
-                                                        data.data.length >
-                                                            0 &&
-                                                        data.data.every(
-                                                            (
-                                                                employee,
-                                                            ) =>
-                                                                selectedIds.includes(
-                                                                    employee.id,
-                                                                ),
-                                                        )
-                                                    }
-                                                    onChange={
-                                                        toggleSelectAll
-                                                    }
-                                                />
-                                            </th>
-
-                                            <SortableHeader
-                                                label="Name"
-                                                field="firstName"
-                                                sortFields={
-                                                    sortFields
-                                                }
-                                                onSort={
-                                                    updateSort
-                                                }
-                                            />
-
-                                            <SortableHeader
-                                                label="Department"
-                                                field="department"
-                                                sortFields={
-                                                    sortFields
-                                                }
-                                                onSort={
-                                                    updateSort
-                                                }
-                                            />
-
-                                            <SortableHeader
-                                                label="Designation"
-                                                field="designation"
-                                                sortFields={
-                                                    sortFields
-                                                }
-                                                onSort={
-                                                    updateSort
-                                                }
-                                            />
-
-                                            <SortableHeader
-                                                label="Status"
-                                                field="status"
-                                                sortFields={
-                                                    sortFields
-                                                }
-                                                onSort={
-                                                    updateSort
-                                                }
-                                            />
-
-                                            <SortableHeader
-                                                label="Join Date"
-                                                field="joinDate"
-                                                sortFields={
-                                                    sortFields
-                                                }
-                                                onSort={
-                                                    updateSort
-                                                }
-                                            />
-
-                                            <th className="px-4 py-3">
-                                                Actions
-                                            </th>
-
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {data.data.map(
-                                            (
-                                                employee,
-                                            ) => (
-                                                <tr
-                                                    key={
-                                                        employee.id
-                                                    }
-                                                    className="border-b last:border-b-0 hover:bg-gray-50"
-                                                >
-                                                    <td className="px-4 py-3">
-                                                        <input
-                                                            type="checkbox"
-                                                            aria-label={`Select ${employee.firstName} ${employee.lastName}`}
-                                                            checked={selectedIds.includes(
-                                                                employee.id,
-                                                            )}
-                                                            onChange={() =>
-                                                                toggleEmployeeSelection(
-                                                                    employee.id,
-                                                                )
-                                                            }
-                                                        />
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        <p className="font-medium">
-                                                            {
-                                                                employee.firstName
-                                                            }{" "}
-                                                            {
-                                                                employee.lastName
-                                                            }
-                                                        </p>
-
-                                                        <p className="text-xs text-gray-500">
-                                                            {
-                                                                employee.email
-                                                            }
-                                                        </p>
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        {
-                                                            employee.department
-                                                        }
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        {
-                                                            employee.designation
-                                                        }
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        <span
-                                                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                                                                employee.status ===
-                                                                "active"
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : "bg-gray-100 text-gray-600"
-                                                            }`}
-                                                        >
-                                                            {
-                                                                employee.status
-                                                            }
-                                                        </span>
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        {
-                                                            employee.joinDate
-                                                        }
-                                                    </td>
-
-                                                    <td className="px-4 py-3">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleEditEmployee(
-                                                                    employee,
-                                                                )
-                                                            }
-                                                            className="rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ),
-                                        )}
-                                    </tbody>
-                                </table>
-
-                                {/* Mobile cards */}
-
-                                <div className="space-y-3 p-3 md:hidden">
-                                    {data.data.map(
-                                        (employee) => (
-                                            <div
-                                                key={
-                                                    employee.id
-                                                }
-                                                className="w-full rounded-lg border bg-white p-3 shadow-sm"
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-
-                                                    <div className="flex min-w-0 items-start gap-3">
-                                                        <input
-                                                            type="checkbox"
-                                                            aria-label={`Select ${employee.firstName} ${employee.lastName}`}
-                                                            checked={selectedIds.includes(
-                                                                employee.id,
-                                                            )}
-                                                            onChange={() =>
-                                                                toggleEmployeeSelection(
-                                                                    employee.id,
-                                                                )
-                                                            }
-                                                            className="mt-1 shrink-0"
-                                                        />
-
-                                                        <div className="min-w-0">
-                                                            <p className="break-words font-medium text-gray-900">
-                                                                {
-                                                                    employee.firstName
-                                                                }{" "}
-                                                                {
-                                                                    employee.lastName
-                                                                }
-                                                            </p>
-
-                                                            <p className="break-all text-xs text-gray-500">
-                                                                {
-                                                                    employee.email
-                                                                }
-                                                            </p>
-
-                                                            <p className="mt-1 text-xs text-gray-500">
-                                                                {
-                                                                    employee.employeeId
-                                                                }
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleEditEmployee(
-                                                                employee,
-                                                            )
-                                                        }
-                                                        className="shrink-0 rounded-lg border border-blue-600 px-3 py-1.5 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                </div>
-
-                                                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs text-gray-500">
-                                                            Department
-                                                        </p>
-
-                                                        <p className="break-words font-medium">
-                                                            {
-                                                                employee.department
-                                                            }
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs text-gray-500">
-                                                            Designation
-                                                        </p>
-
-                                                        <p className="break-words font-medium">
-                                                            {
-                                                                employee.designation
-                                                            }
-                                                        </p>
-                                                    </div>
-
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">
-                                                            Status
-                                                        </p>
-
-                                                        <span
-                                                            className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
-                                                                employee.status ===
-                                                                "active"
-                                                                    ? "bg-green-100 text-green-700"
-                                                                    : "bg-gray-100 text-gray-600"
-                                                            }`}
-                                                        >
-                                                            {
-                                                                employee.status
-                                                            }
-                                                        </span>
-                                                    </div>
-
-                                                    <div>
-                                                        <p className="text-xs text-gray-500">
-                                                            Join Date
-                                                        </p>
-
-                                                        <p className="font-medium">
-                                                            {
-                                                                employee.joinDate
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ),
-                                    )}
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            page >=
+                                            data.totalPages
+                                        }
+                                        onClick={() =>
+                                            goToPage(
+                                                page +
+                                                    1,
+                                            )
+                                        }
+                                        className="rounded-lg border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </div>
                         )}
-
-                        {/* Pagination */}
-
-                        <div className="mt-6 flex flex-wrap items-center gap-3">
-                            <button
-                                type="button"
-                                disabled={page <= 1}
-                                onClick={() =>
-                                    goToPage(
-                                        page - 1,
-                                    )
-                                }
-                                className="rounded-lg border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                Previous
-                            </button>
-
-                            <span className="text-sm">
-                                Page{" "}
-                                {data.page} of{" "}
-                                {data.totalPages}
-                            </span>
-
-                            <button
-                                type="button"
-                                disabled={
-                                    page >=
-                                    data.totalPages
-                                }
-                                onClick={() =>
-                                    goToPage(
-                                        page + 1,
-                                    )
-                                }
-                                className="rounded-lg border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
+                    </>
                 )}
 
                 {/* Edit Employee Panel */}
@@ -1313,7 +1485,8 @@ export default function EmployeesPage() {
                         editingEmployee
                     }
                     isOpen={
-                        editingEmployee !== null
+                        editingEmployee !==
+                        null
                     }
                     onClose={
                         handleCloseEdit
@@ -1363,7 +1536,7 @@ function SortableHeader({
                 {sort && (
                     <span>
                         {sort.direction ===
-                            "asc"
+                        "asc"
                             ? "↑"
                             : "↓"}
                     </span>

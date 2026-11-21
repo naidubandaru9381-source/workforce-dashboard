@@ -76,7 +76,7 @@ export const employeeApi = baseApi.injectEndpoints({
             providesTags: ["Employee"],
         }),
 
-       
+
         getEmployeesInfinite: builder.query<
             PaginatedResponse<Employee>,
             EmployeeQueryParams
@@ -111,32 +111,21 @@ export const employeeApi = baseApi.injectEndpoints({
                 },
             }),
 
-           
+
             serializeQueryArgs: ({
-                endpointName,
-                queryArgs,
-            }) => {
-               const filters = {
-    ...queryArgs,
-};
+    endpointName,
+    queryArgs,
+}) => {
+    const filters = {
+        ...queryArgs,
+        page: undefined,
+    };
 
-delete filters.page;
+    return `${endpointName}-${JSON.stringify(filters)}`;
+},
 
-return `${endpointName}-${JSON.stringify(filters)}`;
-
-                return `${endpointName}-${JSON.stringify(
-                    filters,
-                )}`;
-            },
-
-            /*
-             * Merge the newly fetched page into the existing cache.
-             */
             merge: (currentCache, newItems, { arg }) => {
-                /*
-                 * When filters/search/sorting change, page 1
-                 * replaces the previous data.
-                 */
+
                 if (arg.page === 1) {
                     return newItems;
                 }
@@ -185,25 +174,25 @@ return `${endpointName}-${JSON.stringify(filters)}`;
 
                 return (
                     currentArg.page !==
-                        previousArg.page ||
+                    previousArg.page ||
                     currentArg.pageSize !==
-                        previousArg.pageSize ||
+                    previousArg.pageSize ||
                     currentArg.search !==
-                        previousArg.search ||
+                    previousArg.search ||
                     currentArg.department !==
-                        previousArg.department ||
+                    previousArg.department ||
                     currentArg.status !==
-                        previousArg.status ||
+                    previousArg.status ||
                     currentArg.joinDateFrom !==
-                        previousArg.joinDateFrom ||
+                    previousArg.joinDateFrom ||
                     currentArg.joinDateTo !==
-                        previousArg.joinDateTo ||
+                    previousArg.joinDateTo ||
                     JSON.stringify(
                         currentArg.sort,
                     ) !==
-                        JSON.stringify(
-                            previousArg.sort,
-                        )
+                    JSON.stringify(
+                        previousArg.sort,
+                    )
                 );
             },
 
