@@ -1,8 +1,4 @@
-import {
-    generateEmployees,
-    generateTasks,
-    generateLeaveRequests,
-} from "@/mocks/data/seed";
+import { getEmployees, getLeaveRequests, getTasks } from "@/mocks/data/store";
 
 import type { DashboardSummary } from "@/types/dashboard";
 
@@ -10,19 +6,30 @@ export async function getDashboardSummaryServer(
     from: string,
     to: string,
 ): Promise<DashboardSummary> {
-    const employees = generateEmployees(5000);
-    const tasks = generateTasks(20000);
-    const leaveRequests = generateLeaveRequests(500);
+    /*
+     * Use the shared lazy data store instead of regenerating
+     * 5,000 employees, 20,000 tasks, and 500 leave requests
+     * on every dashboard render.
+     */
+    const employees = getEmployees();
+    const tasks = getTasks();
+    const leaveRequests = getLeaveRequests();
+
+    // ------------------------------------------------------------
+    // Headcount by department
+    // ------------------------------------------------------------
 
     const headcountMap = new Map<string, number>();
 
-    employees
-        .filter((employee) => employee.status === "active")
-        .forEach((employee) => {
-            const count = headcountMap.get(employee.department) ?? 0;
+    for (const employee of employees) {
+        if (employee.status !== "active") {
+            continue;
+        }
 
-            headcountMap.set(employee.department, count + 1);
-        });
+        const currentCount = headcountMap.get(employee.department) ?? 0;
+
+        headcountMap.set(employee.department, currentCount + 1);
+    }
 
     const headcountByDepartment = Array.from(headcountMap.entries())
         .map(([department, count]) => ({
@@ -31,35 +38,66 @@ export async function getDashboardSummaryServer(
         }))
         .sort((a, b) => b.count - a.count);
 
-    const rangeTasks = tasks.filter((task) => {
+    // ------------------------------------------------------------
+    // Task metrics
+    // ------------------------------------------------------------
+
+    const now = new Date();
+
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let overdueTaskCount = 0;
+
+    /*
+     * Process all 20,000 tasks in a single loop instead of
+     * creating multiple filtered arrays.
+     */
+    for (const task of tasks) {
         const taskDate = task.dueDate.split("T")[0];
+        const dueDate = new Date(task.dueDate);
 
-        return taskDate >= from && taskDate <= to;
-    });
+        const isInRange = taskDate >= from && taskDate <= to;
 
-    const completedTasks = rangeTasks.filter(
-        (task) => task.status === "done",
-    ).length;
+        if (isInRange) {
+            totalTasks += 1;
 
-    const totalTasks = rangeTasks.length;
+            if (task.status === "done") {
+                completedTasks += 1;
+            }
+        }
+
+        if (dueDate < now && task.status !== "done") {
+            overdueTaskCount += 1;
+        }
+    }
 
     const taskCompletionRate =
         totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-    const now = new Date();
+    // ------------------------------------------------------------
+    // Employee lookup
+    // ------------------------------------------------------------
 
-    const overdueTasks = tasks.filter((task) => {
-        const dueDate = new Date(task.dueDate);
+    /*
+     * Avoid employees.find() for every leave request.
+     *
+     * Map lookup is O(1), instead of repeatedly scanning
+     * the 5,000 employee array.
+     */
+    const employeeMap = new Map(
+        employees.map((employee) => [
+            employee.id,
+            `${employee.firstName} ${employee.lastName}`,
+        ]),
+    );
 
-        return dueDate < now && task.status !== "done";
-    }).length;
+    // ------------------------------------------------------------
+    // Upcoming leave
+    // ------------------------------------------------------------
 
-    // Upcoming leave means leave starting
-    // today through the next 30 days.
     const today = new Date().toISOString().split("T")[0];
 
     const upcomingTo = new Date();
-
     upcomingTo.setDate(upcomingTo.getDate() + 30);
 
     const upcomingToDate = upcomingTo.toISOString().split("T")[0];
@@ -74,23 +112,19 @@ export async function getDashboardSummaryServer(
         })
         .sort((a, b) => a.startDate.localeCompare(b.startDate))
         .slice(0, 10)
-        .map((leave) => {
-            const employee = employees.find(
-                (employee) => employee.id === leave.employeeId,
-            );
+        .map((leave) => ({
+            id: leave.id,
+            employeeId: leave.employeeId,
+            employeeName: employeeMap.get(leave.employeeId) ?? leave.employeeId,
+            startDate: leave.startDate,
+            endDate: leave.endDate,
+            days: leave.days,
+            status: leave.status,
+        }));
 
-            return {
-                id: leave.id,
-                employeeId: leave.employeeId,
-                employeeName: employee
-                    ? `${employee.firstName} ${employee.lastName}`
-                    : leave.employeeId,
-                startDate: leave.startDate,
-                endDate: leave.endDate,
-                days: leave.days,
-                status: leave.status,
-            };
-        });
+    // ------------------------------------------------------------
+    // Dashboard summary
+    // ------------------------------------------------------------
 
     return {
         dateRange: {
@@ -107,7 +141,7 @@ export async function getDashboardSummaryServer(
         },
 
         overdueTasks: {
-            count: overdueTasks,
+            count: overdueTaskCount,
         },
 
         upcomingLeave,

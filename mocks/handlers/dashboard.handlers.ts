@@ -1,17 +1,9 @@
 import { http, HttpResponse, delay } from "msw";
 
-import {
-    generateEmployees,
-    generateTasks,
-    generateLeaveRequests,
-} from "@/mocks/data/seed";
+import { getEmployees, getTasks, getLeaveRequests } from "@/mocks/data/store";
 
 import { validateMockAccessToken } from "./auth.utils";
 import type { DashboardSummary } from "@/types/dashboard";
-
-const employees = generateEmployees(5000);
-const tasks = generateTasks(20000);
-const leaveRequests = generateLeaveRequests(500);
 
 export const dashboardHandlers = [
     http.get("/api/dashboard/summary", async ({ request }) => {
@@ -35,6 +27,10 @@ export const dashboardHandlers = [
 
         const to =
             url.searchParams.get("to") ?? defaultTo.toISOString().split("T")[0];
+
+        const employees = getEmployees();
+        const tasks = getTasks();
+        const leaveRequests = getLeaveRequests();
 
         /*
          * Headcount by department

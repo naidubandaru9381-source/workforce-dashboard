@@ -1,8 +1,7 @@
 import { http, HttpResponse, delay } from "msw";
 import { validateMockAccessToken } from "./auth.utils";
-import { generateEmployees, saveEmployeeOverride } from "../data/seed";
-
-const employees = generateEmployees(5000);
+import { saveEmployeeOverride } from "../data/seed";
+import { getEmployees } from "@/mocks/data/store";
 
 export const employeeHandlers = [
     http.get("/api/employees", async ({ request }) => {
@@ -59,6 +58,8 @@ export const employeeHandlers = [
                 };
             })
             .filter((item) => item.field);
+
+        const employees = getEmployees();
 
         let filteredEmployees = [...employees];
 
@@ -122,6 +123,7 @@ export const employeeHandlers = [
 
             return 0;
         });
+
         const total = filteredEmployees.length;
 
         const totalPages = Math.max(Math.ceil(total / pageSize), 1);
@@ -140,8 +142,10 @@ export const employeeHandlers = [
             totalPages,
         });
     }),
+
     http.patch("/api/employees/bulk-status", async ({ request }) => {
         const authorization = request.headers.get("authorization");
+
         const userId = validateMockAccessToken(authorization);
 
         if (!userId) {
@@ -161,6 +165,8 @@ export const employeeHandlers = [
             employeeIds: string[];
             status: "active" | "inactive";
         };
+
+        const employees = getEmployees();
 
         const results = body.employeeIds.map((employeeId) => {
             const employee = employees.find((item) => item.id === employeeId);
@@ -194,8 +200,10 @@ export const employeeHandlers = [
             results,
         });
     }),
+
     http.patch("/api/employees/:id", async ({ request, params }) => {
         const authorization = request.headers.get("authorization");
+
         const userId = validateMockAccessToken(authorization);
 
         if (!userId) {
@@ -212,6 +220,8 @@ export const employeeHandlers = [
         await delay(500);
 
         const employeeId = String(params.id);
+
+        const employees = getEmployees();
 
         const employee = employees.find((item) => item.id === employeeId);
 

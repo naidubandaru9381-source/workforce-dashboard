@@ -1,11 +1,9 @@
 import { http, HttpResponse, delay } from "msw";
 
-import { generateLeaveRequests } from "@/mocks/data/seed";
+import { getLeaveRequests } from "@/mocks/data/store";
 import { validateMockAccessToken } from "./auth.utils";
 
 import type { LeaveRequest } from "@/types/leave";
-
-const leaveRequests = generateLeaveRequests(500);
 
 const holidays = [
     {
@@ -57,6 +55,8 @@ export const leaveHandlers = [
 
         await delay(400);
 
+        const leaveRequests = getLeaveRequests();
+
         const url = new URL(request.url);
 
         const employeeId = url.searchParams.get("employeeId");
@@ -98,6 +98,8 @@ export const leaveHandlers = [
         await delay(500);
 
         try {
+            const leaveRequests = getLeaveRequests();
+
             const body = (await request.json()) as Partial<LeaveRequest>;
 
             // --------------------------------------------------------
@@ -216,6 +218,8 @@ export const leaveHandlers = [
             );
         }
 
+        const leaveRequests = getLeaveRequests();
+
         const approvedDays = leaveRequests
             .filter(
                 (leaveRequest) =>
@@ -252,6 +256,8 @@ export const leaveHandlers = [
         }
 
         await delay(500);
+
+        const leaveRequests = getLeaveRequests();
 
         const id = String(params.id);
 

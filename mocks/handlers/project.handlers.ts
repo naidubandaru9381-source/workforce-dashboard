@@ -1,10 +1,8 @@
 import { http, HttpResponse, delay } from "msw";
 import type { TaskComment, TaskActivity } from "@/types/task";
-import { generateProjects, generateTasks } from "@/mocks/data/seed";
+import { getProjects, getTasks } from "@/mocks/data/store";
 import { validateMockAccessToken } from "./auth.utils";
 
-const projects = generateProjects(25);
-const tasks = generateTasks(20000);
 const comments: TaskComment[] = [];
 const activities: TaskActivity[] = [];
 
@@ -14,6 +12,8 @@ export const projectHandlers = [
         validateMockAccessToken(request.headers.get("authorization"));
 
         await delay(400);
+
+        const projects = getProjects();
 
         return HttpResponse.json({
             data: projects,
@@ -26,6 +26,8 @@ export const projectHandlers = [
         validateMockAccessToken(request.headers.get("authorization"));
 
         await delay(400);
+
+        const projects = getProjects();
 
         const project = projects.find((item) => item.id === params.id);
 
@@ -48,6 +50,8 @@ export const projectHandlers = [
 
         await delay(500);
 
+        const tasks = getTasks();
+
         const projectId = String(params.id);
 
         const projectTasks = tasks.filter(
@@ -60,8 +64,6 @@ export const projectHandlers = [
         });
     }),
 
-    // PATCH /tasks/:id
-    // PATCH /tasks/:id
     // GET /tasks/:id/comments
     http.get("/api/tasks/:id/comments", async ({ params, request }) => {
         validateMockAccessToken(request.headers.get("authorization"));
@@ -79,11 +81,14 @@ export const projectHandlers = [
             total: taskComments.length,
         });
     }),
+
     // POST /tasks/:id/comments
     http.post("/api/tasks/:id/comments", async ({ params, request }) => {
         validateMockAccessToken(request.headers.get("authorization"));
 
         await delay(400);
+
+        const tasks = getTasks();
 
         const taskId = String(params.id);
 
@@ -140,6 +145,7 @@ export const projectHandlers = [
             status: 201,
         });
     }),
+
     // GET /tasks/:id/activity
     http.get("/api/tasks/:id/activity", async ({ params, request }) => {
         validateMockAccessToken(request.headers.get("authorization"));
@@ -157,10 +163,14 @@ export const projectHandlers = [
             total: taskActivities.length,
         });
     }),
+
+    // PATCH /tasks/:id
     http.patch("/api/tasks/:id", async ({ params, request }) => {
         validateMockAccessToken(request.headers.get("authorization"));
 
         await delay(500);
+
+        const tasks = getTasks();
 
         const taskId = String(params.id);
 
@@ -185,10 +195,7 @@ export const projectHandlers = [
             dueDate?: string;
         };
 
-        // =====================================
-        // CONTROLLED FAILURE FOR TESTING
-        // =====================================
-
+        // Controlled failure for optimistic rollback testing
         if (taskId === "task-200") {
             return HttpResponse.json(
                 {
@@ -199,10 +206,7 @@ export const projectHandlers = [
             );
         }
 
-        // =====================================
-        // STATUS VALIDATION
-        // =====================================
-
+        // Status validation
         if (body.status) {
             const allowedStatuses = [
                 "todo",
@@ -224,10 +228,7 @@ export const projectHandlers = [
             task.status = body.status as typeof task.status;
         }
 
-        // =====================================
-        // OTHER FIELDS
-        // =====================================
-
+        // Other fields
         if (body.title !== undefined) {
             task.title = body.title;
         }
