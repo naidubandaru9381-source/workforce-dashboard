@@ -32,23 +32,23 @@ const columns: {
     status: Task["status"];
     title: string;
 }[] = [
-        {
-            status: "todo",
-            title: "To Do",
-        },
-        {
-            status: "in_progress",
-            title: "In Progress",
-        },
-        {
-            status: "in_review",
-            title: "In Review",
-        },
-        {
-            status: "done",
-            title: "Done",
-        },
-    ];
+    {
+        status: "todo",
+        title: "To Do",
+    },
+    {
+        status: "in_progress",
+        title: "In Progress",
+    },
+    {
+        status: "in_review",
+        title: "In Review",
+    },
+    {
+        status: "done",
+        title: "Done",
+    },
+];
 
 export default function ProjectDetailsPage() {
     const params = useParams();
@@ -73,20 +73,14 @@ export default function ProjectDetailsPage() {
     // PAGE VISIBILITY
     // =========================
 
-    const [isPageVisible, setIsPageVisible] =
-        useState(true);
+    const [isPageVisible, setIsPageVisible] = useState(true);
 
     useEffect(() => {
         const handleVisibilityChange = () => {
-            setIsPageVisible(
-                document.visibilityState === "visible",
-            );
+            setIsPageVisible(document.visibilityState === "visible");
         };
 
-        document.addEventListener(
-            "visibilitychange",
-            handleVisibilityChange,
-        );
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
         return () => {
             document.removeEventListener(
@@ -100,8 +94,7 @@ export default function ProjectDetailsPage() {
     // ACTIVE DRAGGED TASK
     // =========================
 
-    const [activeTaskId, setActiveTaskId] =
-        useState<string | null>(null);
+    const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
     // =========================
     // TASKS API
@@ -111,30 +104,23 @@ export default function ProjectDetailsPage() {
         data: tasksData,
         isLoading: tasksLoading,
         isError: tasksError,
-    } = useGetProjectTasksQuery(
-        projectId,
-        {
-            pollingInterval: activeTaskId
-                ? 0
-                : 15000,
+    } = useGetProjectTasksQuery(projectId, {
+        pollingInterval: activeTaskId ? 0 : 15000,
 
-            skipPollingIfUnfocused: true,
-        },
-    );
+        skipPollingIfUnfocused: true,
+    });
 
     // =========================
     // UPDATE TASK
     // =========================
 
-    const [updateTask] =
-        useUpdateTaskMutation();
+    const [updateTask] = useUpdateTaskMutation();
 
     // =========================
     // SELECTED TASK
     // =========================
 
-    const [selectedTask, setSelectedTask] =
-        useState<Task | null>(null);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     // =========================
     // DRAG SENSORS
@@ -148,8 +134,7 @@ export default function ProjectDetailsPage() {
         }),
 
         useSensor(KeyboardSensor, {
-            coordinateGetter:
-                sortableKeyboardCoordinates,
+            coordinateGetter: sortableKeyboardCoordinates,
         }),
     );
 
@@ -169,17 +154,10 @@ export default function ProjectDetailsPage() {
     // ERROR
     // =========================
 
-    if (
-        projectError ||
-        tasksError ||
-        !project ||
-        !tasksData
-    ) {
+    if (projectError || tasksError || !project || !tasksData) {
         return (
             <main className="p-4 sm:p-6">
-                <p className="text-red-600">
-                    Failed to load project.
-                </p>
+                <p className="text-red-600">Failed to load project.</p>
             </main>
         );
     }
@@ -190,26 +168,19 @@ export default function ProjectDetailsPage() {
     // DRAG START
     // =========================
 
-    const handleDragStart = (
-        event: DragStartEvent,
-    ) => {
+    const handleDragStart = (event: DragStartEvent) => {
         const taskId = String(event.active.id);
 
         setActiveTaskId(taskId);
 
-        console.log(
-            "Started dragging task:",
-            taskId,
-        );
+        console.log("Started dragging task:", taskId);
     };
 
     // =========================
     // DRAG END
     // =========================
 
-    const handleDragEnd = async (
-        event: DragEndEvent,
-    ) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
 
         /*
@@ -229,15 +200,10 @@ export default function ProjectDetailsPage() {
         // FIND TASK
         // =========================
 
-        const task = displayedTasks.find(
-            (item) => item.id === taskId,
-        );
+        const task = displayedTasks.find((item) => item.id === taskId);
 
         if (!task) {
-            console.log(
-                "Task not found:",
-                taskId,
-            );
+            console.log("Task not found:", taskId);
 
             return;
         }
@@ -246,19 +212,10 @@ export default function ProjectDetailsPage() {
         // VALIDATE DESTINATION
         // =========================
 
-        const validStatuses = columns.map(
-            (column) => column.status,
-        );
+        const validStatuses = columns.map((column) => column.status);
 
-        if (
-            !validStatuses.includes(
-                newStatus as Task["status"],
-            )
-        ) {
-            console.log(
-                "Invalid destination:",
-                newStatus,
-            );
+        if (!validStatuses.includes(newStatus as Task["status"])) {
+            console.log("Invalid destination:", newStatus);
 
             return;
         }
@@ -286,14 +243,11 @@ export default function ProjectDetailsPage() {
                 id: task.id,
                 projectId,
                 data: {
-                    status:
-                        newStatus as Task["status"],
+                    status: newStatus as Task["status"],
                 },
             }).unwrap();
 
-            console.log(
-                "Task moved successfully",
-            );
+            console.log("Task moved successfully");
             setToast({
                 message: "Task moved successfully.",
                 type: "success",
@@ -304,18 +258,12 @@ export default function ProjectDetailsPage() {
              * already rolls back the cache.
              */
 
-            console.error(
-                "Task move failed:",
-                error,
-            );
+            console.error("Task move failed:", error);
             setToast({
-                message:
-                    "Task move failed. The change was rolled back.",
+                message: "Task move failed. The change was rolled back.",
                 type: "error",
             });
-            console.log(
-                "Task move rolled back",
-            );
+            console.log("Task move rolled back");
         }
     };
 
@@ -326,9 +274,7 @@ export default function ProjectDetailsPage() {
     const handleDragCancel = () => {
         setActiveTaskId(null);
 
-        console.log(
-            "Task drag cancelled",
-        );
+        console.log("Task drag cancelled");
     };
 
     return (
@@ -338,29 +284,23 @@ export default function ProjectDetailsPage() {
           ========================= */}
 
             <div className="mb-6">
-                <h1 className="text-2xl font-bold">
-                    {project.name}
-                </h1>
+                <h1 className="text-2xl font-bold">{project.name}</h1>
 
                 <p className="mt-1 text-sm text-gray-500">
                     {project.description}
                 </p>
 
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                    <span>
-                        Total tasks:{" "}
-                        {displayedTasks.length}
-                    </span>
+                    <span>Total tasks: {displayedTasks.length}</span>
 
                     <span
-                        className={`rounded-full px-2 py-1 text-xs ${isPageVisible
+                        className={`rounded-full px-2 py-1 text-xs ${
+                            isPageVisible
                                 ? "bg-green-100 text-green-700"
                                 : "bg-gray-200 text-gray-600"
-                            }`}
+                        }`}
                     >
-                        {isPageVisible
-                            ? "Live updates"
-                            : "Updates paused"}
+                        {isPageVisible ? "Live updates" : "Updates paused"}
                     </span>
 
                     {activeTaskId && (
@@ -384,12 +324,9 @@ export default function ProjectDetailsPage() {
             >
                 <div className="grid gap-4 lg:grid-cols-4">
                     {columns.map((column) => {
-                        const columnTasks =
-                            displayedTasks.filter(
-                                (task) =>
-                                    task.status ===
-                                    column.status,
-                            );
+                        const columnTasks = displayedTasks.filter(
+                            (task) => task.status === column.status,
+                        );
 
                         return (
                             <KanbanColumn
@@ -410,9 +347,7 @@ export default function ProjectDetailsPage() {
 
             <TaskSidePanel
                 task={selectedTask}
-                onClose={() =>
-                    setSelectedTask(null)
-                }
+                onClose={() => setSelectedTask(null)}
             />
             {toast && (
                 <Toast

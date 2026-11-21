@@ -1,7 +1,4 @@
-import {
-    render,
-    screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 import EditEmployeePanel from "@/components/employees/EditEmployeePanel";
 
@@ -34,9 +31,7 @@ describe("EditEmployeePanel server error mapping", () => {
         );
 
         expect(
-            await screen.findByText(
-                "Email already exists",
-            ),
+            await screen.findByText("Email already exists"),
         ).toBeInTheDocument();
     });
 });

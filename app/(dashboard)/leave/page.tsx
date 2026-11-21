@@ -11,29 +11,17 @@ import {
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
 export default function LeavePage() {
-const employeeId = "employee-1";
+    const employeeId = "employee-1";
 
-    const {
-        data: leaveBalance,
-        isLoading: isBalanceLoading,
-    } = useGetLeaveBalanceQuery(employeeId);
+    const { data: leaveBalance, isLoading: isBalanceLoading } =
+        useGetLeaveBalanceQuery(employeeId);
 
-    const [statusFilter, setStatusFilter] =
-        useState<StatusFilter>("all");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-    const [reviewError, setReviewError] = useState<string | null>(
-        null,
-    );
+    const [reviewError, setReviewError] = useState<string | null>(null);
 
-    const {
-        data,
-        isLoading,
-        isError,
-        refetch,
-    } = useGetLeaveRequestsQuery(
-        statusFilter === "all"
-            ? {}
-            : { status: statusFilter },
+    const { data, isLoading, isError, refetch } = useGetLeaveRequestsQuery(
+        statusFilter === "all" ? {} : { status: statusFilter },
     );
 
     const [reviewLeaveRequest, { isLoading: isReviewing }] =
@@ -65,15 +53,10 @@ const employeeId = "employee-1";
 
             await refetch();
         } catch (error) {
-            console.error(
-                "Failed to review leave request:",
-                error,
-            );
+            console.error("Failed to review leave request:", error);
 
             const errorStatus =
-                typeof error === "object" &&
-                    error !== null &&
-                    "status" in error
+                typeof error === "object" && error !== null && "status" in error
                     ? error.status
                     : undefined;
 
@@ -167,7 +150,7 @@ const employeeId = "employee-1";
                     <p>
                         {isBalanceLoading
                             ? "..."
-                            : leaveBalance?.remainingBalance ?? 0}
+                            : (leaveBalance?.remainingBalance ?? 0)}
                     </p>
                 </div>
             </div>
@@ -197,10 +180,7 @@ const employeeId = "employee-1";
 
                     {/* Status Filter */}
                     <div>
-                        <label
-                            htmlFor="status-filter"
-                            className="sr-only"
-                        >
+                        <label htmlFor="status-filter" className="sr-only">
                             Filter by status
                         </label>
 
@@ -251,235 +231,232 @@ const employeeId = "employee-1";
                 )}
 
                 {/* Empty State */}
-                {!isLoading &&
-                    !isError &&
-                    leaveRequests.length === 0 && (
-                        <div className="p-10 text-center">
-                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                No leave requests found.
-                            </p>
+                {!isLoading && !isError && leaveRequests.length === 0 && (
+                    <div className="p-10 text-center">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            No leave requests found.
+                        </p>
 
-                            <p className="mt-1 text-sm text-gray-500">
-                                Try changing the status filter or submit a new
-                                leave request.
-                            </p>
-                        </div>
-                    )}
+                        <p className="mt-1 text-sm text-gray-500">
+                            Try changing the status filter or submit a new leave
+                            request.
+                        </p>
+                    </div>
+                )}
 
                 {/* Desktop Table */}
-                {!isLoading &&
-                    !isError &&
-                    leaveRequests.length > 0 && (
-                        <div className="hidden overflow-x-auto md:block">
-                            <table className="w-full text-left text-sm">
-                                <thead className="border-b bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-                                    <tr>
-                                        <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                                            Employee
-                                        </th>
+                {!isLoading && !isError && leaveRequests.length > 0 && (
+                    <div className="hidden overflow-x-auto md:block">
+                        <table className="w-full text-left text-sm">
+                            <thead className="border-b bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                                <tr>
+                                    <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                                        Employee
+                                    </th>
 
-                                        <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                                            Start Date
-                                        </th>
+                                    <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                                        Start Date
+                                    </th>
 
-                                        <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                                            End Date
-                                        </th>
+                                    <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                                        End Date
+                                    </th>
 
-                                        <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                                            Days
-                                        </th>
+                                    <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                                        Days
+                                    </th>
 
-                                        <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                                            Reason
-                                        </th>
+                                    <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                                        Reason
+                                    </th>
 
-                                        <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                                            Status
-                                        </th>
+                                    <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                                        Status
+                                    </th>
 
-                                        <th className="px-5 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">
-                                            Action
-                                        </th>
-                                    </tr>
-                                </thead>
+                                    <th className="px-5 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
 
-                                <tbody className="divide-y dark:divide-gray-700">
-                                    {leaveRequests.map((request) => (
-                                        <tr
-                                            key={request.id}
-                                            className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                                        >
-                                            <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">
-                                                {request.employeeId}
-                                            </td>
+                            <tbody className="divide-y dark:divide-gray-700">
+                                {leaveRequests.map((request) => (
+                                    <tr
+                                        key={request.id}
+                                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    >
+                                        <td className="px-5 py-4 font-medium text-gray-900 dark:text-white">
+                                            {request.employeeId}
+                                        </td>
 
-                                            <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                                                {request.startDate}
-                                            </td>
+                                        <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
+                                            {request.startDate}
+                                        </td>
 
-                                            <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                                                {request.endDate}
-                                            </td>
+                                        <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
+                                            {request.endDate}
+                                        </td>
 
-                                            <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
-                                                {request.days}
-                                            </td>
+                                        <td className="px-5 py-4 text-gray-600 dark:text-gray-300">
+                                            {request.days}
+                                        </td>
 
-                                            <td className="max-w-xs truncate px-5 py-4 text-gray-600 dark:text-gray-300">
-                                                {request.reason}
-                                            </td>
+                                        <td className="max-w-xs truncate px-5 py-4 text-gray-600 dark:text-gray-300">
+                                            {request.reason}
+                                        </td>
 
-                                            <td className="px-5 py-4">
-                                                <span
-                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${request.status === "pending"
-                                                            ? "bg-yellow-100 text-yellow-800"
-                                                            : request.status === "approved"
-                                                                ? "bg-green-100 text-green-800"
-                                                                : "bg-red-100 text-red-800"
-                                                        }`}
-                                                >
-                                                    {request.status}
+                                        <td className="px-5 py-4">
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                    request.status === "pending"
+                                                        ? "bg-yellow-100 text-yellow-800"
+                                                        : request.status ===
+                                                            "approved"
+                                                          ? "bg-green-100 text-green-800"
+                                                          : "bg-red-100 text-red-800"
+                                                }`}
+                                            >
+                                                {request.status}
+                                            </span>
+                                        </td>
+
+                                        <td className="px-5 py-4 text-right">
+                                            {request.status === "pending" ? (
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        type="button"
+                                                        disabled={isReviewing}
+                                                        onClick={() =>
+                                                            handleReview(
+                                                                request.id,
+                                                                "approved",
+                                                            )
+                                                        }
+                                                        className="rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {isReviewing
+                                                            ? "Updating..."
+                                                            : "Approve"}
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        disabled={isReviewing}
+                                                        onClick={() =>
+                                                            handleReview(
+                                                                request.id,
+                                                                "rejected",
+                                                            )
+                                                        }
+                                                        className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {isReviewing
+                                                            ? "Updating..."
+                                                            : "Reject"}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">
+                                                    Reviewed
                                                 </span>
-                                            </td>
-
-                                            <td className="px-5 py-4 text-right">
-                                                {request.status === "pending" ? (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button
-                                                            type="button"
-                                                            disabled={isReviewing}
-                                                            onClick={() =>
-                                                                handleReview(
-                                                                    request.id,
-                                                                    "approved",
-                                                                )
-                                                            }
-                                                            className="rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                                        >
-                                                            {isReviewing
-                                                                ? "Updating..."
-                                                                : "Approve"}
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            disabled={isReviewing}
-                                                            onClick={() =>
-                                                                handleReview(
-                                                                    request.id,
-                                                                    "rejected",
-                                                                )
-                                                            }
-                                                            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                                        >
-                                                            {isReviewing
-                                                                ? "Updating..."
-                                                                : "Reject"}
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">
-                                                        Reviewed
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
 
                 {/* Mobile Cards */}
-                {!isLoading &&
-                    !isError &&
-                    leaveRequests.length > 0 && (
-                        <div className="space-y-4 p-4 md:hidden">
-                            {leaveRequests.map((request) => (
-                                <div
-                                    key={request.id}
-                                    className="rounded-lg border p-4 dark:border-gray-700"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p className="font-semibold text-gray-900 dark:text-white">
-                                                {request.employeeId}
-                                            </p>
+                {!isLoading && !isError && leaveRequests.length > 0 && (
+                    <div className="space-y-4 p-4 md:hidden">
+                        {leaveRequests.map((request) => (
+                            <div
+                                key={request.id}
+                                className="rounded-lg border p-4 dark:border-gray-700"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="font-semibold text-gray-900 dark:text-white">
+                                            {request.employeeId}
+                                        </p>
 
-                                            <p className="mt-1 text-sm text-gray-500">
-                                                {request.startDate} →{" "}
-                                                {request.endDate}
-                                            </p>
-                                        </div>
-
-                                        <span
-                                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${request.status === "pending"
-                                                    ? "bg-yellow-100 text-yellow-800"
-                                                    : request.status === "approved"
-                                                        ? "bg-green-100 text-green-800"
-                                                        : "bg-red-100 text-red-800"
-                                                }`}
-                                        >
-                                            {request.status}
-                                        </span>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {request.startDate} →{" "}
+                                            {request.endDate}
+                                        </p>
                                     </div>
 
-                                    <div className="mt-4 space-y-2 text-sm">
-                                        <div>
-                                            <span className="font-medium">
-                                                Days:
-                                            </span>{" "}
-                                            {request.days}
-                                        </div>
-
-                                        <div>
-                                            <span className="font-medium">
-                                                Reason:
-                                            </span>{" "}
-                                            {request.reason}
-                                        </div>
-                                    </div>
-
-                                    {request.status === "pending" && (
-                                        <div className="mt-4 flex gap-2">
-                                            <button
-                                                type="button"
-                                                disabled={isReviewing}
-                                                onClick={() =>
-                                                    handleReview(
-                                                        request.id,
-                                                        "approved",
-                                                    )
-                                                }
-                                                className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                {isReviewing
-                                                    ? "Updating..."
-                                                    : "Approve"}
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                disabled={isReviewing}
-                                                onClick={() =>
-                                                    handleReview(
-                                                        request.id,
-                                                        "rejected",
-                                                    )
-                                                }
-                                                className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                {isReviewing
-                                                    ? "Updating..."
-                                                    : "Reject"}
-                                            </button>
-                                        </div>
-                                    )}
+                                    <span
+                                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                                            request.status === "pending"
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : request.status === "approved"
+                                                  ? "bg-green-100 text-green-800"
+                                                  : "bg-red-100 text-red-800"
+                                        }`}
+                                    >
+                                        {request.status}
+                                    </span>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+
+                                <div className="mt-4 space-y-2 text-sm">
+                                    <div>
+                                        <span className="font-medium">
+                                            Days:
+                                        </span>{" "}
+                                        {request.days}
+                                    </div>
+
+                                    <div>
+                                        <span className="font-medium">
+                                            Reason:
+                                        </span>{" "}
+                                        {request.reason}
+                                    </div>
+                                </div>
+
+                                {request.status === "pending" && (
+                                    <div className="mt-4 flex gap-2">
+                                        <button
+                                            type="button"
+                                            disabled={isReviewing}
+                                            onClick={() =>
+                                                handleReview(
+                                                    request.id,
+                                                    "approved",
+                                                )
+                                            }
+                                            className="flex-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {isReviewing
+                                                ? "Updating..."
+                                                : "Approve"}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={isReviewing}
+                                            onClick={() =>
+                                                handleReview(
+                                                    request.id,
+                                                    "rejected",
+                                                )
+                                            }
+                                            className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {isReviewing
+                                                ? "Updating..."
+                                                : "Reject"}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

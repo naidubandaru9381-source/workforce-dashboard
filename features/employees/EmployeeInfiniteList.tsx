@@ -49,14 +49,7 @@ export default function EmployeeInfiniteList({
                 joinDateTo,
                 sort,
             }),
-        [
-            search,
-            department,
-            status,
-            joinDateFrom,
-            joinDateTo,
-            sort,
-        ],
+        [search, department, status, joinDateFrom, joinDateTo, sort],
     );
 
     /*
@@ -68,44 +61,30 @@ export default function EmployeeInfiniteList({
      * If filters changed, immediately use page 1 for the API request.
      * This prevents requesting page 4 of a completely new filter set.
      */
-    const queryPage =
-        previousFilterKeyRef.current === filterKey
-            ? page
-            : 1;
+    const queryPage = previousFilterKeyRef.current === filterKey ? page : 1;
 
     useEffect(() => {
-        if (
-            previousFilterKeyRef.current !==
-            filterKey
-        ) {
+        if (previousFilterKeyRef.current !== filterKey) {
             previousFilterKeyRef.current = filterKey;
             setPage(1);
         }
     }, [filterKey]);
 
-    const {
-        data,
-        isLoading,
-        isFetching,
-        isError,
-        refetch,
-    } = useGetEmployeesInfiniteQuery({
-        page: queryPage,
-        pageSize: PAGE_SIZE,
-        search: search || undefined,
-        department: department || undefined,
-        status: status || undefined,
-        joinDateFrom: joinDateFrom || undefined,
-        joinDateTo: joinDateTo || undefined,
-        sort,
-    });
+    const { data, isLoading, isFetching, isError, refetch } =
+        useGetEmployeesInfiniteQuery({
+            page: queryPage,
+            pageSize: PAGE_SIZE,
+            search: search || undefined,
+            department: department || undefined,
+            status: status || undefined,
+            joinDateFrom: joinDateFrom || undefined,
+            joinDateTo: joinDateTo || undefined,
+            sort,
+        });
 
     const employees = data?.data ?? [];
 
-    const hasMore = Boolean(
-        data &&
-            data.page < data.totalPages,
-    );
+    const hasMore = Boolean(data && data.page < data.totalPages);
 
     /*
      * Prevent multiple requests for the same next page.
@@ -113,10 +92,7 @@ export default function EmployeeInfiniteList({
     const requestedPageRef = useRef(1);
 
     useEffect(() => {
-        if (
-            previousFilterKeyRef.current !==
-            filterKey
-        ) {
+        if (previousFilterKeyRef.current !== filterKey) {
             requestedPageRef.current = 1;
         }
     }, [filterKey]);
@@ -128,37 +104,28 @@ export default function EmployeeInfiniteList({
      *
      * 50 employees + 1 loader row = 51 virtual rows
      */
-    const itemCount =
-        employees.length +
-        (hasMore ? 1 : 0);
+    const itemCount = employees.length + (hasMore ? 1 : 0);
 
     const rowVirtualizer = useVirtualizer({
         count: itemCount,
 
-        getScrollElement: () =>
-            parentRef.current,
+        getScrollElement: () => parentRef.current,
 
         estimateSize: () => 104,
 
         overscan: 8,
 
-        getItemKey: (index) =>
-            employees[index]?.id ??
-            `loader-${index}`,
+        getItemKey: (index) => employees[index]?.id ?? `loader-${index}`,
     });
 
     /*
      * Store the virtual rows in a variable so that
      * React's dependency checker can track it properly.
      */
-    const virtualItems =
-        rowVirtualizer.getVirtualItems();
+    const virtualItems = rowVirtualizer.getVirtualItems();
 
     useEffect(() => {
-        const lastVirtualItem =
-            virtualItems[
-                virtualItems.length - 1
-            ];
+        const lastVirtualItem = virtualItems[virtualItems.length - 1];
 
         if (!lastVirtualItem) {
             return;
@@ -168,15 +135,9 @@ export default function EmployeeInfiniteList({
          * The loader row comes immediately after
          * the last employee.
          */
-        const isLoaderRow =
-            lastVirtualItem.index >=
-            employees.length;
+        const isLoaderRow = lastVirtualItem.index >= employees.length;
 
-        if (
-            !isLoaderRow ||
-            !hasMore ||
-            isFetching
-        ) {
+        if (!isLoaderRow || !hasMore || isFetching) {
             return;
         }
 
@@ -185,23 +146,14 @@ export default function EmployeeInfiniteList({
         /*
          * Prevent duplicate page requests.
          */
-        if (
-            requestedPageRef.current >=
-            nextPage
-        ) {
+        if (requestedPageRef.current >= nextPage) {
             return;
         }
 
         requestedPageRef.current = nextPage;
 
         setPage(nextPage);
-    }, [
-        virtualItems,
-        employees.length,
-        hasMore,
-        isFetching,
-        page,
-    ]);
+    }, [virtualItems, employees.length, hasMore, isFetching, page]);
 
     /*
      * Initial loading.
@@ -230,10 +182,7 @@ export default function EmployeeInfiniteList({
     /*
      * Initial API error.
      */
-    if (
-        isError &&
-        employees.length === 0
-    ) {
+    if (isError && employees.length === 0) {
         return (
             <div
                 className="flex min-h-[300px] flex-col items-center justify-center gap-3"
@@ -273,22 +222,15 @@ export default function EmployeeInfiniteList({
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                     Showing{" "}
+                    <span className="font-medium">{employees.length}</span> of{" "}
                     <span className="font-medium">
-                        {employees.length}
-                    </span>{" "}
-                    of{" "}
-                    <span className="font-medium">
-                        {data?.total ??
-                            employees.length}
+                        {data?.total ?? employees.length}
                     </span>{" "}
                     employees
                 </p>
 
                 {isFetching && (
-                    <p
-                        className="text-xs text-gray-500"
-                        aria-live="polite"
-                    >
+                    <p className="text-xs text-gray-500" aria-live="polite">
                         Loading more employees...
                     </p>
                 )}
@@ -309,161 +251,122 @@ export default function EmployeeInfiniteList({
                         position: "relative",
                     }}
                 >
-                    {virtualItems.map(
-                        (virtualRow) => {
-                            const employee =
-                                employees[
-                                    virtualRow.index
-                                ];
+                    {virtualItems.map((virtualRow) => {
+                        const employee = employees[virtualRow.index];
 
-                            /*
-                             * Loader row
-                             */
-                            if (!employee) {
-                                return (
-                                    <div
-                                        key={
-                                            virtualRow.key
-                                        }
-                                        ref={
-                                            rowVirtualizer.measureElement
-                                        }
-                                        data-index={
-                                            virtualRow.index
-                                        }
-                                        className="absolute left-0 top-0 flex w-full items-center justify-center px-4"
-                                        style={{
-                                            transform: `translateY(${virtualRow.start}px)`,
-                                            minHeight:
-                                                "96px",
-                                        }}
-                                    >
-                                        {isFetching ? (
-                                            <div className="flex items-center gap-2">
-                                                <div
-                                                    className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"
-                                                    aria-hidden="true"
-                                                />
-
-                                                <p className="text-sm text-gray-500">
-                                                    Loading more employees...
-                                                </p>
-                                            </div>
-                                        ) : isError ? (
-                                            <div className="flex flex-wrap items-center justify-center gap-3">
-                                                <p
-                                                    className="text-sm text-red-600"
-                                                    role="alert"
-                                                >
-                                                    Failed to load more employees.
-                                                </p>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        refetch()
-                                                    }
-                                                    className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-gray-800"
-                                                >
-                                                    Retry
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-gray-500">
-                                                Loading more...
-                                            </p>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            /*
-                             * Employee row
-                             */
+                        /*
+                         * Loader row
+                         */
+                        if (!employee) {
                             return (
-                                <article
-                                    key={
-                                        virtualRow.key
-                                    }
-                                    ref={
-                                        rowVirtualizer.measureElement
-                                    }
-                                    data-index={
-                                        virtualRow.index
-                                    }
-                                    className="absolute left-0 top-0 w-full px-3 py-2"
+                                <div
+                                    key={virtualRow.key}
+                                    ref={rowVirtualizer.measureElement}
+                                    data-index={virtualRow.index}
+                                    className="absolute left-0 top-0 flex w-full items-center justify-center px-4"
                                     style={{
                                         transform: `translateY(${virtualRow.start}px)`,
+                                        minHeight: "96px",
                                     }}
-                                    role="listitem"
                                 >
-                                    <div className="flex flex-col gap-3 rounded-lg border p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
-                                        {/* Employee information */}
-                                        <div className="min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <h3 className="truncate font-medium">
-                                                    {
-                                                        employee.firstName
-                                                    }{" "}
-                                                    {
-                                                        employee.lastName
-                                                    }
-                                                </h3>
+                                    {isFetching ? (
+                                        <div className="flex items-center gap-2">
+                                            <div
+                                                className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"
+                                                aria-hidden="true"
+                                            />
 
-                                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                                                    {
-                                                        employee.status
-                                                    }
-                                                </span>
-                                            </div>
-
-                                            <p className="mt-1 truncate text-sm text-gray-500">
-                                                {
-                                                    employee.email
-                                                }
+                                            <p className="text-sm text-gray-500">
+                                                Loading more employees...
+                                            </p>
+                                        </div>
+                                    ) : isError ? (
+                                        <div className="flex flex-wrap items-center justify-center gap-3">
+                                            <p
+                                                className="text-sm text-red-600"
+                                                role="alert"
+                                            >
+                                                Failed to load more employees.
                                             </p>
 
-                                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                                                <span>
-                                                    Department:{" "}
-                                                    {
-                                                        employee.department
-                                                    }
-                                                </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => refetch()}
+                                                className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-gray-800"
+                                            >
+                                                Retry
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">
+                                            Loading more...
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        }
 
-                                                <span>
-                                                    Designation:{" "}
-                                                    {
-                                                        employee.designation
-                                                    }
-                                                </span>
+                        /*
+                         * Employee row
+                         */
+                        return (
+                            <article
+                                key={virtualRow.key}
+                                ref={rowVirtualizer.measureElement}
+                                data-index={virtualRow.index}
+                                className="absolute left-0 top-0 w-full px-3 py-2"
+                                style={{
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                }}
+                                role="listitem"
+                            >
+                                <div className="flex flex-col gap-3 rounded-lg border p-4 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+                                    {/* Employee information */}
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h3 className="truncate font-medium">
+                                                {employee.firstName}{" "}
+                                                {employee.lastName}
+                                            </h3>
 
-                                                <span>
-                                                    Joined:{" "}
-                                                    {
-                                                        employee.joinDate
-                                                    }
-                                                </span>
-                                            </div>
+                                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                                {employee.status}
+                                            </span>
                                         </div>
 
-                                        {/* Edit action */}
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                onEdit(
-                                                    employee,
-                                                )
-                                            }
-                                            className="shrink-0 rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-gray-800"
-                                        >
-                                            Edit
-                                        </button>
+                                        <p className="mt-1 truncate text-sm text-gray-500">
+                                            {employee.email}
+                                        </p>
+
+                                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                            <span>
+                                                Department:{" "}
+                                                {employee.department}
+                                            </span>
+
+                                            <span>
+                                                Designation:{" "}
+                                                {employee.designation}
+                                            </span>
+
+                                            <span>
+                                                Joined: {employee.joinDate}
+                                            </span>
+                                        </div>
                                     </div>
-                                </article>
-                            );
-                        },
-                    )}
+
+                                    {/* Edit action */}
+                                    <button
+                                        type="button"
+                                        onClick={() => onEdit(employee)}
+                                        className="shrink-0 rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:hover:bg-gray-800"
+                                    >
+                                        Edit
+                                    </button>
+                                </div>
+                            </article>
+                        );
+                    })}
                 </div>
             </div>
         </section>

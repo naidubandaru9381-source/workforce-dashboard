@@ -4,9 +4,9 @@ import { projectHandlers } from "./project.handlers";
 import { leaveHandlers } from "./leave.handlers";
 import { dashboardHandlers } from "./dashboard.handlers";
 export const handlers = [
-  ...authHandlers,
-  ...employeeHandlers,
-  ...projectHandlers,   
-  ...dashboardHandlers,
-  ...leaveHandlers,
+    ...authHandlers,
+    ...employeeHandlers,
+    ...projectHandlers,
+    ...dashboardHandlers,
+    ...leaveHandlers,
 ];

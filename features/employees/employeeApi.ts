@@ -65,17 +65,13 @@ export const employeeApi = baseApi.injectEndpoints({
                     ...(joinDateTo && { joinDateTo }),
                     ...(sort?.length && {
                         sort: sort
-                            .map(
-                                (item) =>
-                                    `${item.field}:${item.direction}`,
-                            )
+                            .map((item) => `${item.field}:${item.direction}`)
                             .join(","),
                     }),
                 },
             }),
             providesTags: ["Employee"],
         }),
-
 
         getEmployeesInfinite: builder.query<
             PaginatedResponse<Employee>,
@@ -102,30 +98,22 @@ export const employeeApi = baseApi.injectEndpoints({
                     ...(joinDateTo && { joinDateTo }),
                     ...(sort?.length && {
                         sort: sort
-                            .map(
-                                (item) =>
-                                    `${item.field}:${item.direction}`,
-                            )
+                            .map((item) => `${item.field}:${item.direction}`)
                             .join(","),
                     }),
                 },
             }),
 
+            serializeQueryArgs: ({ endpointName, queryArgs }) => {
+                const filters = {
+                    ...queryArgs,
+                    page: undefined,
+                };
 
-            serializeQueryArgs: ({
-    endpointName,
-    queryArgs,
-}) => {
-    const filters = {
-        ...queryArgs,
-        page: undefined,
-    };
-
-    return `${endpointName}-${JSON.stringify(filters)}`;
-},
+                return `${endpointName}-${JSON.stringify(filters)}`;
+            },
 
             merge: (currentCache, newItems, { arg }) => {
-
                 if (arg.page === 1) {
                     return newItems;
                 }
@@ -135,14 +123,11 @@ export const employeeApi = baseApi.injectEndpoints({
                  * requested again.
                  */
                 const existingIds = new Set(
-                    currentCache.data.map(
-                        (employee) => employee.id,
-                    ),
+                    currentCache.data.map((employee) => employee.id),
                 );
 
                 const newEmployees = newItems.data.filter(
-                    (employee) =>
-                        !existingIds.has(employee.id),
+                    (employee) => !existingIds.has(employee.id),
                 );
 
                 /*
@@ -154,45 +139,29 @@ export const employeeApi = baseApi.injectEndpoints({
                  * Keep pagination metadata up to date.
                  */
                 currentCache.page = newItems.page;
-                currentCache.pageSize =
-                    newItems.pageSize;
+                currentCache.pageSize = newItems.pageSize;
                 currentCache.total = newItems.total;
-                currentCache.totalPages =
-                    newItems.totalPages;
+                currentCache.totalPages = newItems.totalPages;
             },
 
             /*
              * Tell RTK Query when another request should be made.
              */
-            forceRefetch({
-                currentArg,
-                previousArg,
-            }) {
+            forceRefetch({ currentArg, previousArg }) {
                 if (!currentArg || !previousArg) {
                     return true;
                 }
 
                 return (
-                    currentArg.page !==
-                    previousArg.page ||
-                    currentArg.pageSize !==
-                    previousArg.pageSize ||
-                    currentArg.search !==
-                    previousArg.search ||
-                    currentArg.department !==
-                    previousArg.department ||
-                    currentArg.status !==
-                    previousArg.status ||
-                    currentArg.joinDateFrom !==
-                    previousArg.joinDateFrom ||
-                    currentArg.joinDateTo !==
-                    previousArg.joinDateTo ||
-                    JSON.stringify(
-                        currentArg.sort,
-                    ) !==
-                    JSON.stringify(
-                        previousArg.sort,
-                    )
+                    currentArg.page !== previousArg.page ||
+                    currentArg.pageSize !== previousArg.pageSize ||
+                    currentArg.search !== previousArg.search ||
+                    currentArg.department !== previousArg.department ||
+                    currentArg.status !== previousArg.status ||
+                    currentArg.joinDateFrom !== previousArg.joinDateFrom ||
+                    currentArg.joinDateTo !== previousArg.joinDateTo ||
+                    JSON.stringify(currentArg.sort) !==
+                        JSON.stringify(previousArg.sort)
                 );
             },
 

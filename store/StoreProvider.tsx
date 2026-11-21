@@ -6,34 +6,26 @@ import { Provider } from "react-redux";
 import { store } from "@/store";
 
 import {
-  hydrateCredentials,
-  markAuthHydrated,
+    hydrateCredentials,
+    markAuthHydrated,
 } from "@/features/auth/authSlice";
 
 import { getAuthSession } from "@/lib/auth/authStorage";
 
 interface StoreProviderProps {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }
 
-export default function StoreProvider({
-  children,
-}: StoreProviderProps) {
-  useEffect(() => {
-    const session = getAuthSession();
+export default function StoreProvider({ children }: StoreProviderProps) {
+    useEffect(() => {
+        const session = getAuthSession();
 
-    if (session) {
-      store.dispatch(
-        hydrateCredentials(session),
-      );
-    } else {
-      store.dispatch(markAuthHydrated());
-    }
-  }, []);
+        if (session) {
+            store.dispatch(hydrateCredentials(session));
+        } else {
+            store.dispatch(markAuthHydrated());
+        }
+    }, []);
 
-  return (
-    <Provider store={store}>
-      {children}
-    </Provider>
-  );
+    return <Provider store={store}>{children}</Provider>;
 }

@@ -26,13 +26,10 @@ describe("projectApi optimistic updates", () => {
         return configureStore({
             reducer: {
                 auth: authReducer,
-                [baseApi.reducerPath]:
-                    baseApi.reducer,
+                [baseApi.reducerPath]: baseApi.reducer,
             },
             middleware: (getDefaultMiddleware) =>
-                getDefaultMiddleware().concat(
-                    baseApi.middleware,
-                ),
+                getDefaultMiddleware().concat(baseApi.middleware),
         });
     }
 
@@ -40,50 +37,39 @@ describe("projectApi optimistic updates", () => {
         const store = createTestStore();
 
         store.dispatch(
-            projectApi.util.upsertQueryData(
-                "getProjectTasks",
+            projectApi.util.upsertQueryData("getProjectTasks", projectId, {
+                data: [initialTask],
+                total: 1,
+            }),
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        const updatePromise = store.dispatch(
+            projectApi.endpoints.updateTask.initiate({
+                id: taskId,
                 projectId,
-                {
-                    data: [initialTask],
-                    total: 1,
+                data: {
+                    status: "in_progress",
                 },
-            ),
+            }),
         );
-
-        await new Promise((resolve) =>
-            setTimeout(resolve, 0),
-        );
-
-        const updatePromise =
-            store.dispatch(
-                projectApi.endpoints.updateTask.initiate({
-                    id: taskId,
-                    projectId,
-                    data: {
-                        status: "in_progress",
-                    },
-                }),
-            );
 
         const stateAfterOptimisticUpdate =
-            baseApi.endpoints.getProjectTasks.select(
-                projectId,
-            )(store.getState());
+            baseApi.endpoints.getProjectTasks.select(projectId)(
+                store.getState(),
+            );
 
-        expect(
-            stateAfterOptimisticUpdate.data?.data[0]
-                .status,
-        ).toBe("in_progress");
+        expect(stateAfterOptimisticUpdate.data?.data[0].status).toBe(
+            "in_progress",
+        );
 
         await updatePromise;
 
-        const stateAfterRollback =
-            baseApi.endpoints.getProjectTasks.select(
-                projectId,
-            )(store.getState());
+        const stateAfterRollback = baseApi.endpoints.getProjectTasks.select(
+            projectId,
+        )(store.getState());
 
-        expect(
-            stateAfterRollback.data?.data[0].status,
-        ).toBe("todo");
+        expect(stateAfterRollback.data?.data[0].status).toBe("todo");
     });
 });

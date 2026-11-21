@@ -8,10 +8,7 @@ import { Mutex } from "async-mutex";
 import { saveAuthSession } from "@/lib/auth/authStorage";
 
 import type { RootState } from "@/store";
-import {
-    logout,
-    updateAccessToken,
-} from "@/features/auth/authSlice";
+import { logout, updateAccessToken } from "@/features/auth/authSlice";
 
 const rawBaseQuery = fetchBaseQuery({
     baseUrl: "/api",
@@ -42,19 +39,11 @@ export const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
     await mutex.waitForUnlock();
 
-    let result = await rawBaseQuery(
-        args,
-        api,
-        extraOptions,
-    );
+    let result = await rawBaseQuery(args, api, extraOptions);
 
-    const requestUrl =
-        typeof args === "string" ? args : args.url;
+    const requestUrl = typeof args === "string" ? args : args.url;
 
-    if (
-        result.error?.status === 401 &&
-        !requestUrl.includes("/auth/refresh")
-    ) {
+    if (result.error?.status === 401 && !requestUrl.includes("/auth/refresh")) {
         if (!mutex.isLocked()) {
             const release = await mutex.acquire();
 
@@ -62,9 +51,7 @@ export const baseQueryWithReauth: BaseQueryFn<
                 const state = api.getState() as RootState;
                 const refreshToken =
                     state.auth.refreshToken ||
-                    sessionStorage.getItem(
-                        "workforce-refresh-token",
-                    );
+                    sessionStorage.getItem("workforce-refresh-token");
                 if (!refreshToken) {
                     api.dispatch(logout());
 
@@ -84,18 +71,14 @@ export const baseQueryWithReauth: BaseQueryFn<
                 );
 
                 if (refreshResult.data) {
-                    const refreshData =
-                        refreshResult.data as {
-                            accessToken: string;
-                            accessTokenExpiresAt: number;
-                        };
+                    const refreshData = refreshResult.data as {
+                        accessToken: string;
+                        accessTokenExpiresAt: number;
+                    };
 
-                    api.dispatch(
-                        updateAccessToken(refreshData),
-                    );
+                    api.dispatch(updateAccessToken(refreshData));
 
-                    const latestState =
-                        api.getState() as RootState;
+                    const latestState = api.getState() as RootState;
 
                     if (
                         latestState.auth.user &&
@@ -103,20 +86,14 @@ export const baseQueryWithReauth: BaseQueryFn<
                     ) {
                         saveAuthSession({
                             user: latestState.auth.user,
-                            accessToken:
-                                refreshData.accessToken,
-                            refreshToken:
-                                latestState.auth.refreshToken,
+                            accessToken: refreshData.accessToken,
+                            refreshToken: latestState.auth.refreshToken,
                             accessTokenExpiresAt:
                                 refreshData.accessTokenExpiresAt,
                         });
                     }
 
-                    result = await rawBaseQuery(
-                        args,
-                        api,
-                        extraOptions,
-                    );
+                    result = await rawBaseQuery(args, api, extraOptions);
                 } else {
                     api.dispatch(logout());
                 }
@@ -126,11 +103,7 @@ export const baseQueryWithReauth: BaseQueryFn<
         } else {
             await mutex.waitForUnlock();
 
-            result = await rawBaseQuery(
-                args,
-                api,
-                extraOptions,
-            );
+            result = await rawBaseQuery(args, api, extraOptions);
         }
     }
 

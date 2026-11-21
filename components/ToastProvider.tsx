@@ -58,17 +58,11 @@ function getToastLabel(type: ToastType) {
     }
 }
 
-export default function ToastProvider({
-    children,
-}: {
-    children: ReactNode;
-}) {
+export default function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     const removeToast = useCallback((id: string) => {
-        setToasts((current) =>
-            current.filter((toast) => toast.id !== id),
-        );
+        setToasts((current) => current.filter((toast) => toast.id !== id));
     }, []);
 
     const showToast = useCallback(
@@ -111,11 +105,7 @@ export default function ToastProvider({
                 {toasts.map((toast) => (
                     <div
                         key={toast.id}
-                        role={
-                            toast.type === "error"
-                                ? "alert"
-                                : "status"
-                        }
+                        role={toast.type === "error" ? "alert" : "status"}
                         className={`pointer-events-auto rounded-lg border-l-4 p-4 shadow-lg transition ${getToastStyles(
                             toast.type,
                         )}`}
@@ -133,9 +123,7 @@ export default function ToastProvider({
 
                             <button
                                 type="button"
-                                onClick={() =>
-                                    removeToast(toast.id)
-                                }
+                                onClick={() => removeToast(toast.id)}
                                 aria-label="Close notification"
                                 className="shrink-0 rounded p-1 text-lg leading-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
@@ -153,9 +141,7 @@ export function useToast() {
     const context = useContext(ToastContext);
 
     if (!context) {
-        throw new Error(
-            "useToast must be used inside ToastProvider",
-        );
+        throw new Error("useToast must be used inside ToastProvider");
     }
 
     return context;

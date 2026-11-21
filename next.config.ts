@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.resolve.alias["msw/browser"] = false;
-    }
+    webpack: (config, { isServer }) => {
+        if (isServer) {
+            config.resolve.alias["msw/browser"] = false;
+        }
 
-    return config;
-  },
+        return config;
+    },
 };
 
 export default nextConfig;

@@ -1,9 +1,4 @@
-import {
-    fireEvent,
-    render,
-    screen,
-    waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import ToastProvider from "@/components/ToastProvider";
 import EmployeesPage from "@/app/(dashboard)/employees/page";
@@ -63,11 +58,7 @@ jest.mock("next/navigation", () => ({
 jest.mock("@/features/auth/RoleGuard", () => ({
     __esModule: true,
 
-    default: ({
-        children,
-    }: {
-        children: React.ReactNode;
-    }) => children,
+    default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 jest.mock("@/features/employees/hooks/useDebounce", () => ({
@@ -148,44 +139,31 @@ describe("EmployeesPage", () => {
             }),
         ).toBeInTheDocument();
 
-        expect(
-            screen.getByLabelText("Search employees"),
-        ).toBeInTheDocument();
+        expect(screen.getByLabelText("Search employees")).toBeInTheDocument();
 
-        expect(
-            screen.getByLabelText("Department"),
-        ).toBeInTheDocument();
+        expect(screen.getByLabelText("Department")).toBeInTheDocument();
 
-        expect(
-            screen.getByLabelText("Status"),
-        ).toBeInTheDocument();
+        expect(screen.getByLabelText("Status")).toBeInTheDocument();
     });
 
     it("renders employee data from the API", () => {
         renderEmployeesPage();
 
-        expect(
-            screen.getAllByText("John Doe").length,
-        ).toBeGreaterThan(0);
+        expect(screen.getAllByText("John Doe").length).toBeGreaterThan(0);
 
-        expect(
-            screen.getAllByText("Jane Smith").length,
-        ).toBeGreaterThan(0);
+        expect(screen.getAllByText("Jane Smith").length).toBeGreaterThan(0);
 
-        expect(
-            screen.getAllByText("john@example.com").length,
-        ).toBeGreaterThan(0);
+        expect(screen.getAllByText("john@example.com").length).toBeGreaterThan(
+            0,
+        );
 
-        expect(
-            screen.getAllByText("Engineering").length,
-        ).toBeGreaterThan(0);
+        expect(screen.getAllByText("Engineering").length).toBeGreaterThan(0);
     });
 
     it("updates the URL when searching for an employee", async () => {
         renderEmployeesPage();
 
-        const searchInput =
-            screen.getByLabelText("Search employees");
+        const searchInput = screen.getByLabelText("Search employees");
 
         fireEvent.change(searchInput, {
             target: {
@@ -203,14 +181,11 @@ describe("EmployeesPage", () => {
     it("updates the URL when department filter changes", async () => {
         renderEmployeesPage();
 
-        fireEvent.change(
-            screen.getByLabelText("Department"),
-            {
-                target: {
-                    value: "Engineering",
-                },
+        fireEvent.change(screen.getByLabelText("Department"), {
+            target: {
+                value: "Engineering",
             },
-        );
+        });
 
         await waitFor(() => {
             expect(mockPush).toHaveBeenCalledWith(
@@ -222,14 +197,11 @@ describe("EmployeesPage", () => {
     it("updates the URL when status filter changes", async () => {
         renderEmployeesPage();
 
-        fireEvent.change(
-            screen.getByLabelText("Status"),
-            {
-                target: {
-                    value: "active",
-                },
+        fireEvent.change(screen.getByLabelText("Status"), {
+            target: {
+                value: "active",
             },
-        );
+        });
 
         await waitFor(() => {
             expect(mockPush).toHaveBeenCalledWith(
@@ -243,14 +215,11 @@ describe("EmployeesPage", () => {
 
         renderEmployeesPage();
 
-        fireEvent.change(
-            screen.getByLabelText("Department"),
-            {
-                target: {
-                    value: "Engineering",
-                },
+        fireEvent.change(screen.getByLabelText("Department"), {
+            target: {
+                value: "Engineering",
             },
-        );
+        });
 
         await waitFor(() => {
             expect(mockPush).toHaveBeenCalledWith(
@@ -262,14 +231,11 @@ describe("EmployeesPage", () => {
     it("updates the URL when join date range changes", async () => {
         renderEmployeesPage();
 
-        fireEvent.change(
-            screen.getByLabelText("Join Date From"),
-            {
-                target: {
-                    value: "2025-01-01",
-                },
+        fireEvent.change(screen.getByLabelText("Join Date From"), {
+            target: {
+                value: "2025-01-01",
             },
-        );
+        });
 
         await waitFor(() => {
             expect(mockPush).toHaveBeenCalledWith(
@@ -311,10 +277,7 @@ describe("EmployeesPage", () => {
     });
 
     it("toggles an existing sort from ascending to descending", async () => {
-        mockSearchParams.set(
-            "sort",
-            "firstName:asc,department:asc",
-        );
+        mockSearchParams.set("sort", "firstName:asc,department:asc");
 
         renderEmployeesPage();
 
@@ -334,10 +297,9 @@ describe("EmployeesPage", () => {
     it("selects an employee", () => {
         renderEmployeesPage();
 
-        const checkboxes =
-            screen.getAllByRole("checkbox", {
-                name: "Select John Doe",
-            });
+        const checkboxes = screen.getAllByRole("checkbox", {
+            name: "Select John Doe",
+        });
 
         expect(checkboxes).toHaveLength(2);
 
@@ -351,22 +313,19 @@ describe("EmployeesPage", () => {
     it("selects all employees on the current page", () => {
         renderEmployeesPage();
 
-        const selectAllCheckbox =
-            screen.getByRole("checkbox", {
-                name: "Select all employees on this page",
-            });
+        const selectAllCheckbox = screen.getByRole("checkbox", {
+            name: "Select all employees on this page",
+        });
 
         fireEvent.click(selectAllCheckbox);
 
-        const johnCheckboxes =
-            screen.getAllByRole("checkbox", {
-                name: "Select John Doe",
-            });
+        const johnCheckboxes = screen.getAllByRole("checkbox", {
+            name: "Select John Doe",
+        });
 
-        const janeCheckboxes =
-            screen.getAllByRole("checkbox", {
-                name: "Select Jane Smith",
-            });
+        const janeCheckboxes = screen.getAllByRole("checkbox", {
+            name: "Select Jane Smith",
+        });
 
         expect(johnCheckboxes).toHaveLength(2);
 
@@ -382,10 +341,9 @@ describe("EmployeesPage", () => {
     it("shows the bulk deactivate action when an employee is selected", () => {
         renderEmployeesPage();
 
-        const johnCheckboxes =
-            screen.getAllByRole("checkbox", {
-                name: "Select John Doe",
-            });
+        const johnCheckboxes = screen.getAllByRole("checkbox", {
+            name: "Select John Doe",
+        });
 
         fireEvent.click(johnCheckboxes[0]);
 
@@ -399,17 +357,15 @@ describe("EmployeesPage", () => {
     it("bulk deactivates selected employees", async () => {
         renderEmployeesPage();
 
-        const johnCheckboxes =
-            screen.getAllByRole("checkbox", {
-                name: "Select John Doe",
-            });
+        const johnCheckboxes = screen.getAllByRole("checkbox", {
+            name: "Select John Doe",
+        });
 
         fireEvent.click(johnCheckboxes[0]);
 
-        const deactivateButton =
-            screen.getByRole("button", {
-                name: "Deactivate Selected",
-            });
+        const deactivateButton = screen.getByRole("button", {
+            name: "Deactivate Selected",
+        });
 
         fireEvent.click(deactivateButton);
 

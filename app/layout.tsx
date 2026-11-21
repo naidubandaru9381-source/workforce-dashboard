@@ -9,18 +9,18 @@ import ThemeToggle from "@/components/ThemeToggle";
 import StoreProvider from "@/store/StoreProvider";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+    variable: "--font-geist-sans",
+    subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+    variable: "--font-geist-mono",
+    subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Workforce Dashboard",
-  description: "Workforce and project management dashboard",
+    title: "Workforce Dashboard",
+    description: "Workforce and project management dashboard",
 };
 
 const themeScript = `
@@ -48,36 +48,33 @@ const themeScript = `
 `;
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-    >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: themeScript,
-          }}
-        />
-      </head>
+    return (
+        <html lang="en" suppressHydrationWarning>
+            <head>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: themeScript,
+                    }}
+                />
+            </head>
 
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-white`}
-      >
-        <MSWProvider>
-          <StoreProvider>
-            <ToastProvider>
-              <OfflineBanner />
-              <ThemeToggle />
-              {children}
-            </ToastProvider>
-          </StoreProvider>
-        </MSWProvider>
-      </body>
-    </html>
-  );
+            <body
+                className={`${geistSans.variable} ${geistMono.variable} bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-white`}
+            >
+                <MSWProvider>
+                    <StoreProvider>
+                        <ToastProvider>
+                            <OfflineBanner />
+                            <ThemeToggle />
+                            {children}
+                        </ToastProvider>
+                    </StoreProvider>
+                </MSWProvider>
+            </body>
+        </html>
+    );
 }

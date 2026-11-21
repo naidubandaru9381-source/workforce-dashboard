@@ -39,34 +39,28 @@ const navigationItems: NavItem[] = [
 export default function Sidebar() {
     const pathname = usePathname();
 
-    const user = useSelector(
-        (state: RootState) => state.auth.user,
-    );
+    const user = useSelector((state: RootState) => state.auth.user);
 
     if (!user) {
         return null;
     }
 
-    const visibleItems = navigationItems.filter(
-        (item) => item.roles.includes(user.role),
+    const visibleItems = navigationItems.filter((item) =>
+        item.roles.includes(user.role),
     );
 
     return (
         <aside className="fixed left-0 top-0 z-40 flex h-screen w-20 flex-col border-r bg-white md:w-64">
             {/* Header */}
             <div className="border-b px-2 py-5 md:px-6">
-                <h1 className="hidden text-xl font-bold md:block">
-                    Workforce
-                </h1>
+                <h1 className="hidden text-xl font-bold md:block">Workforce</h1>
 
                 <p className="hidden mt-1 text-sm capitalize text-gray-500 md:block">
                     {user.role}
                 </p>
 
                 {/* Mobile logo */}
-                <p className="text-center text-xl font-bold md:hidden">
-                    W
-                </p>
+                <p className="text-center text-xl font-bold md:hidden">W</p>
             </div>
 
             {/* Navigation */}
