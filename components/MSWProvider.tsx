@@ -23,9 +23,7 @@ export default function MSWProvider({
     if (!workerStartPromise) {
       workerStartPromise = import("@/mocks/browser")
         .then(async ({ worker }) => {
-          await worker.start({
-            onUnhandledRequest: "bypass",
-          });
+         await worker.start();
         })
         .catch((error) => {
           workerStartPromise = null;

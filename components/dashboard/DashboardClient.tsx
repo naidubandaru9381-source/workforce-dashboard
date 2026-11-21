@@ -5,7 +5,6 @@ import {
   useMemo,
   useState,
 } from "react";
-
 import { useDispatch } from "react-redux";
 
 import {
@@ -23,7 +22,6 @@ import {
 import HeadcountWidget from "./HeadcountWidget";
 import UpcomingLeaveWidget from "./UpcomingLeaveWidget";
 
-import { baseApi } from "@/store/api/baseApi";
 import type { AppDispatch } from "@/store";
 
 import type { DashboardSummary } from "@/types/dashboard";
@@ -91,13 +89,13 @@ export default function DashboardClient({
    * the initial dashboard load.
    */
   useEffect(() => {
-    dispatch(
-      baseApi.util.upsertQueryData(
-        "getDashboardSummary",
-        initialDateRange,
-        initialSummary,
-      ),
-    );
+   dispatch(
+  dashboardApi.util.upsertQueryData(
+    "getDashboardSummary",
+    initialDateRange,
+    initialSummary,
+  ),
+);
   }, [
     dispatch,
     initialDateRange,

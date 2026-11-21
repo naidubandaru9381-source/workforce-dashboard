@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,10 +14,12 @@ import { setCredentials } from "@/features/auth/authSlice";
 import { saveAuthSession } from "@/lib/auth/authStorage";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
-export default function LoginPage() {
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch<AppDispatch>();
+
   const [login, { isLoading }] = useLoginMutation();
   const [serverError, setServerError] = useState("");
 
@@ -37,23 +39,23 @@ const dispatch = useDispatch<AppDispatch>();
     setServerError("");
 
     try {
-     const data = await login(values).unwrap();
+      const data = await login(values).unwrap();
 
-dispatch(setCredentials(data));
-saveAuthSession(data);
+      dispatch(setCredentials(data));
+      saveAuthSession(data);
 
-const redirectTo =
-  searchParams.get("redirect") || "/dashboard";
+      const redirectTo =
+        searchParams.get("redirect") || "/dashboard";
 
-router.replace(redirectTo);
+      router.replace(redirectTo);
     } catch (error) {
       const message =
         typeof error === "object" &&
-          error !== null &&
-          "data" in error &&
-          typeof error.data === "object" &&
-          error.data !== null &&
-          "message" in error.data
+        error !== null &&
+        "data" in error &&
+        typeof error.data === "object" &&
+        error.data !== null &&
+        "message" in error.data
           ? String(error.data.message)
           : "Unable to sign in. Please try again.";
 
@@ -153,5 +155,19 @@ router.replace(redirectTo);
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-100">
+          <p className="text-gray-600">Loading...</p>
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

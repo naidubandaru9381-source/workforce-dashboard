@@ -101,35 +101,32 @@ export default function EmployeesPage() {
     // Multi-column sorting
     // -----------------------------
 
-    const [sortFields, setSortFields] = useState<SortField[]>(
-        () => {
-            const sortParam = searchParams.get("sort");
+   const [sortFields, setSortFields] = useState<SortField[]>(
+    (): SortField[] => {
+        const sortParam = searchParams.get("sort");
 
-            if (!sortParam) {
-                return [
-                    {
-                        field: "firstName",
-                        direction: "asc",
-                    },
-                ];
-            }
+        if (!sortParam) {
+            return [
+                {
+                    field: "firstName",
+                    direction: "asc",
+                },
+            ];
+        }
 
-            return sortParam
-                .split(",")
-                .map((item) => {
-                    const [field, direction] = item.split(":");
+        return sortParam
+            .split(",")
+            .map((item): SortField => {
+                const [field, direction] = item.split(":");
 
-                    return {
-                        field,
-                        direction:
-                            direction === "desc"
-                                ? "desc"
-                                : "asc",
-                    };
-                })
-                .filter((item) => item.field);
-        },
-    );
+                return {
+                    field,
+                    direction: direction === "desc" ? "desc" : "asc",
+                };
+            })
+            .filter((item) => item.field);
+    },
+);
 
     const debouncedSearch = useDebounce(
         searchInput,
